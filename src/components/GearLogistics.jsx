@@ -84,21 +84,11 @@ export default function GearLogistics({
           setAllCategories(data.personalCategoriesMap[currentUser.uid]);
         }
 
-        // Ambil Master Templates dari Firebase dengan deteksi field agar bisa kosong permanen
+        // Ambil Master Templates dari Firebase
         if ('masterTemplates' in data) {
           setMasterTemplates(data.masterTemplates || []);
         } else {
-          setMasterTemplates([
-            { 
-              id: 't1', 
-              name: 'Standar Pendakian (2H1M)', 
-              items: [
-                { name: 'Jaket Gunung Windproof', category: 'Pakaian / Layering' },
-                { name: 'Headlamp + Baterai', category: 'Elektronik / Gadget' },
-                { name: 'Jas Hujan', category: 'Pakaian / Layering' }
-              ] 
-            }
-          ]);
+          setMasterTemplates([]);
         }
       }
     });

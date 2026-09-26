@@ -12,10 +12,21 @@ export default function GearLogistics({
 }) {
   const [activeTab, setActiveTab] = useState('group');
 
-  // ================= STATE LOGISTIK TIM (REAL-TIME FIREBASE SYNC) =================
+  // ================= STATE LOGISTIK TIM & ECO-WASTE (SHARED SATU TIM - FIREBASE SYNC) =================
   const [groupGear, setGroupGear] = useState([]);
   const [editingGroupId, setEditingGroupId] = useState(null);
   const [editGroupForm, setEditGroupForm] = useState({});
+
+  const [ecoWaste, setEcoWaste] = useState([]);
+  const [isAddingWaste, setIsAddingWaste] = useState(false);
+  const [newWasteItem, setNewWasteItem] = useState('');
+
+  // ================= STATE PERSONAL GEAR (TERISOLASI TIAP USER - FIREBASE SYNC) =================
+  const [personalGear, setPersonalGear] = useState([]);
+  const [newPersonalItem, setNewPersonalItem] = useState('');
+  const [newPersonalQty, setNewPersonalQty] = useState(1);
+  const [editingPersonalId, setEditingPersonalId] = useState(null);
+  const [editPersonalForm, setEditPersonalForm] = useState({});
 
   useEffect(() => {
     if (!tripId) return;
@@ -24,10 +35,25 @@ export default function GearLogistics({
     const unsubscribe = onSnapshot(tripRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        
+        // 1. Logistik Tim (Sama untuk semua anggota tim)
         setGroupGear(data.groupGear || [
           { id: 1, name: 'Tenda Kapasitas 4', qty: 1, pj: 'Tim (Bawaan Bersama)', method: 'Sewa', status: 'ready' },
           { id: 2, name: 'Nesting + Kompor', qty: 1, pj: currentUser.displayName || 'Leader', method: 'Punya Pribadi', status: 'pending' },
         ]);
+        
+        // 2. Eco-Waste (Sama untuk semua anggota tim)
+        setEcoWaste(data.ecoWaste || [
+          { id: 1, name: 'Bungkus Mie Instan', naik: 10, turun: 10, status: 'clear' },
+        ]);
+
+        // 3. Personal Gear (Dipisah per User berdasarkan UID masing-masing)
+        const personalMap = data.personalGearMap || {};
+        const userGear = personalMap[currentUser?.uid] || [
+          { id: 1, name: 'Carrier 45L+', qty: 1, checked: true },
+          { id: 2, name: 'Sleeping Bag', qty: 1, checked: false },
+        ];
+        setPersonalGear(userGear);
       }
     });
 
@@ -44,24 +70,27 @@ export default function GearLogistics({
     }
   };
 
-  // ================= STATE PERSONAL GEAR (DENGAN LOCALSTORAGE) =================
-  const [personalGear, setPersonalGear] = useState(() => {
-    const saved = localStorage.getItem(`personal_gear_${currentUser?.uid}`);
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+  const updateEcoWasteToFirebase = async (newEcoWasteList) => {
+    if (!tripId) return;
+    try {
+      const tripRef = doc(db, 'trips', tripId);
+      await updateDoc(tripRef, { ecoWaste: newEcoWasteList });
+    } catch (error) {
+      console.error("Gagal update eco-waste ke database:", error);
     }
-    return [
-    ];
-  });
+  };
 
-  useEffect(() => {
-    localStorage.setItem(`personal_gear_${currentUser?.uid}`, JSON.stringify(personalGear));
-  }, [personalGear, currentUser]);
-
-  const [newPersonalItem, setNewPersonalItem] = useState('');
-  const [newPersonalQty, setNewPersonalQty] = useState(1);
-  const [editingPersonalId, setEditingPersonalId] = useState(null);
-  const [editPersonalForm, setEditPersonalForm] = useState({});
+  const updatePersonalGearToFirebase = async (newUserGearList) => {
+    if (!tripId || !currentUser?.uid) return;
+    try {
+      const tripRef = doc(db, 'trips', tripId);
+      await updateDoc(tripRef, {
+        [`personalGearMap.${currentUser.uid}`]: newUserGearList
+      });
+    } catch (error) {
+      console.error("Gagal update personal gear ke database:", error);
+    }
+  };
   
   // ================= STATE MASTER TEMPLATE =================
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -71,24 +100,6 @@ export default function GearLogistics({
     { id: 't1', name: 'Standar Pendakian (2H1M)', items: ['Jaket Gunung Windproof', 'Headlamp + Baterai', 'Jas Hujan'] }
   ]);
   const [templateItemInputs, setTemplateItemInputs] = useState({});
-
-  // ================= STATE ECO-WASTE (DENGAN LOCALSTORAGE) =================
-  const [ecoWaste, setEcoWaste] = useState(() => {
-    const saved = localStorage.getItem(`eco_waste_${tripId || 'default'}`);
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { console.error(e); }
-    }
-    return [
-      { id: 1, name: 'Bungkus Mie Instan', naik: 10, turun: 10, status: 'clear' },
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem(`eco_waste_${tripId || 'default'}`, JSON.stringify(ecoWaste));
-  }, [ecoWaste, tripId]);
-
-  const [isAddingWaste, setIsAddingWaste] = useState(false);
-  const [newWasteItem, setNewWasteItem] = useState('');
 
 
   // ================= HANDLERS: LOGISTIK TIM =================
@@ -118,33 +129,43 @@ export default function GearLogistics({
   };
 
 
-  // ================= HANDLERS: PERSONAL GEAR =================
-  const togglePersonalStatus = (id) => {
+  // ================= HANDLERS: PERSONAL GEAR (MURNI MILIK USER TERSEBUT) =================
+  const togglePersonalStatus = async (id) => {
     if (editingPersonalId) return;
-    setPersonalGear(personalGear.map(item => item.id === id ? { ...item, checked: !item.checked } : item));
+    const updated = personalGear.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
+    setPersonalGear(updated);
+    await updatePersonalGearToFirebase(updated);
   };
 
-  const hapusPersonalItem = (e, id) => {
+  const hapusPersonalItem = async (e, id) => {
     e.stopPropagation();
-    setPersonalGear(personalGear.filter(item => item.id !== id));
+    const updated = personalGear.filter(item => item.id !== id);
+    setPersonalGear(updated);
+    await updatePersonalGearToFirebase(updated);
   };
 
-  const tambahPersonalItem = (e) => {
+  const tambahPersonalItem = async (e) => {
     e.preventDefault();
     if (!newPersonalItem.trim()) return;
-    setPersonalGear([...personalGear, { id: Date.now(), name: newPersonalItem, qty: newPersonalQty, checked: false }]);
+    const updated = [...personalGear, { id: Date.now(), name: newPersonalItem, qty: newPersonalQty, checked: false }];
+    setPersonalGear(updated);
+    await updatePersonalGearToFirebase(updated);
     setNewPersonalItem('');
     setNewPersonalQty(1);
   };
 
-  const handleEditPersonalSave = () => {
-    setPersonalGear(personalGear.map(p => p.id === editingPersonalId ? editPersonalForm : p));
+  const handleEditPersonalSave = async () => {
+    const updated = personalGear.map(p => p.id === editingPersonalId ? editPersonalForm : p);
+    setPersonalGear(updated);
+    await updatePersonalGearToFirebase(updated);
     setEditingPersonalId(null);
   };
 
-  const importFromTemplate = (templateItems) => {
+  const importFromTemplate = async (templateItems) => {
     const newItems = templateItems.map((name, idx) => ({ id: Date.now() + idx, name: name, qty: 1, checked: false }));
-    setPersonalGear([...personalGear, ...newItems]);
+    const updated = [...personalGear, ...newItems];
+    setPersonalGear(updated);
+    await updatePersonalGearToFirebase(updated);
     setShowTemplateModal(false);
   };
 
@@ -182,28 +203,31 @@ export default function GearLogistics({
   };
 
   // ================= HANDLERS: ECO-WASTE =================
-  const updateWasteCount = (id, field, change) => {
-    setEcoWaste(ecoWaste.map(item => {
+  const updateWasteCount = async (id, field, change) => {
+    const updated = ecoWaste.map(item => {
       if (item.id === id) {
         const newVal = Math.max(0, item[field] + change);
-        const updated = { ...item, [field]: newVal };
-        updated.status = updated.turun >= updated.naik ? 'clear' : 'warning';
-        return updated;
+        const updatedItem = { ...item, [field]: newVal };
+        updatedItem.status = updatedItem.turun >= updatedItem.naik ? 'clear' : 'warning';
+        return updatedItem;
       }
       return item;
-    }));
+    });
+    await updateEcoWasteToFirebase(updated);
   };
 
-  const tambahWasteItem = (e) => {
+  const tambahWasteItem = async (e) => {
     e.preventDefault();
     if (!newWasteItem.trim()) return;
-    setEcoWaste([...ecoWaste, { id: Date.now(), name: newWasteItem, naik: 1, turun: 0, status: 'warning' }]);
+    const updated = [...ecoWaste, { id: Date.now(), name: newWasteItem, naik: 1, turun: 0, status: 'warning' }];
+    await updateEcoWasteToFirebase(updated);
     setNewWasteItem('');
     setIsAddingWaste(false);
   };
 
-  const hapusWasteItem = (id) => {
-    setEcoWaste(ecoWaste.filter(item => item.id !== id));
+  const hapusWasteItem = async (id) => {
+    const updated = ecoWaste.filter(item => item.id !== id);
+    await updateEcoWasteToFirebase(updated);
   };
 
 
@@ -327,13 +351,13 @@ export default function GearLogistics({
         </div>
       )}
 
-      {/* ================= TAB 2: PERSONAL ================= */}
+      {/* ================= TAB 2: PERSONAL (TERISOLASI TIAP USER DI CLOUD) ================= */}
       {activeTab === 'personal' && (
         <div className="space-y-3 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-cyan-950/20 border border-cyan-500/30 rounded-2xl gap-3">
             <div>
               <p className="text-cyan-400 text-xs font-bold mb-0.5 flex items-center gap-1.5"><Sparkles size={13}/> Checklist Milik {currentUser?.displayName}</p>
-              <p className="text-slate-400 text-[11px]">Data ini terisolasi cuma buat akun lo. Tarik template dari Leader biar ga lupa bawaan.</p>
+              <p className="text-slate-400 text-[11px]">List ini khusus dan berbeda untuk tiap anggota. Tersimpan aman di cloud.</p>
             </div>
             <button onClick={() => {setShowTemplateModal(!showTemplateModal); setIsManageMode(false);}} className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md">
               <Download size={14} /> {showTemplateModal ? 'Tutup Template' : 'Import Template'}

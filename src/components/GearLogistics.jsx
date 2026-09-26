@@ -50,6 +50,14 @@ export default function GearLogistics({
   // Kategori dinamis (bisa nambah kategori baru selain default)
   const [allCategories, setAllCategories] = useState(DEFAULT_CATEGORIES);
 
+  // ================= STATE MASTER TEMPLATE =================
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [isManageMode, setIsManageMode] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [masterTemplates, setMasterTemplates] = useState([]);
+  const [templateItemInputs, setTemplateItemInputs] = useState({});
+  const [templateItemCategoryInputs, setTemplateItemCategoryInputs] = useState({});
+
   useEffect(() => {
     if (!tripId) return;
     const tripRef = doc(db, 'trips', tripId);
@@ -68,15 +76,29 @@ export default function GearLogistics({
         ]);
 
         const personalMap = data.personalGearMap || {};
-        const userGear = personalMap[currentUser?.uid] || [
-          { id: 1, name: 'Carrier 45L+', qty: 1, category: 'Gear Perjalanan / Trekking', checkedIndices: [], checked: true },
-          { id: 2, name: 'Sleeping Bag', qty: 1, category: 'Perlengkapan Tidur / Shelter', checkedIndices: [], checked: false },
-        ];
+        const userGear = personalMap[currentUser?.uid] || [];
         setPersonalGear(userGear);
 
         // Ambil kategori custom jika ada tersimpan
         if (data.personalCategoriesMap && data.personalCategoriesMap[currentUser?.uid]) {
           setAllCategories(data.personalCategoriesMap[currentUser.uid]);
+        }
+
+        // Ambil Master Templates dari Firebase dengan deteksi field agar bisa kosong permanen
+        if ('masterTemplates' in data) {
+          setMasterTemplates(data.masterTemplates || []);
+        } else {
+          setMasterTemplates([
+            { 
+              id: 't1', 
+              name: 'Standar Pendakian (2H1M)', 
+              items: [
+                { name: 'Jaket Gunung Windproof', category: 'Pakaian / Layering' },
+                { name: 'Headlamp + Baterai', category: 'Elektronik / Gadget' },
+                { name: 'Jas Hujan', category: 'Pakaian / Layering' }
+              ] 
+            }
+          ]);
         }
       }
     });
@@ -113,24 +135,15 @@ export default function GearLogistics({
       console.error("Gagal update personal gear:", error);
     }
   };
-  
-  // ================= STATE MASTER TEMPLATE =================
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [isManageMode, setIsManageMode] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [masterTemplates, setMasterTemplates] = useState([
-    { 
-      id: 't1', 
-      name: 'Standar Pendakian (2H1M)', 
-      items: [
-        { name: 'Jaket Gunung Windproof', category: 'Pakaian / Layering' },
-        { name: 'Headlamp + Baterai', category: 'Elektronik / Gadget' },
-        { name: 'Jas Hujan', category: 'Pakaian / Layering' }
-      ] 
+
+  const updateMasterTemplatesToFirebase = async (newTemplates) => {
+    if (!tripId) return;
+    try {
+      await updateDoc(doc(db, 'trips', tripId), { masterTemplates: newTemplates });
+    } catch (error) {
+      console.error("Gagal update master templates:", error);
     }
-  ]);
-  const [templateItemInputs, setTemplateItemInputs] = useState({});
-  const [templateItemCategoryInputs, setTemplateItemCategoryInputs] = useState({});
+  };
 
   // ================= HANDLERS: LOGISTIK TIM =================
   const handleEditGroupSave = async () => {
@@ -207,7 +220,6 @@ export default function GearLogistics({
       checked: false 
     }));
     
-    // Pastikan kategori dari template masuk ke list kategori user jika belum ada
     let updatedCategories = [...allCategories];
     templateItems.forEach(tItem => {
       if (tItem.category && !updatedCategories.includes(tItem.category)) {
@@ -223,40 +235,48 @@ export default function GearLogistics({
   };
 
   // ================= HANDLERS: TEMPLATE =================
-  const tambahMasterTemplate = (e) => {
+  const tambahMasterTemplate = async (e) => {
     e.preventDefault();
     if (!isLeader) return;
     if (!newTemplateName.trim()) return;
-    setMasterTemplates([...masterTemplates, { id: Date.now().toString(), name: newTemplateName.trim(), items: [] }]);
+    const updatedTemplates = [...masterTemplates, { id: Date.now().toString(), name: newTemplateName.trim(), items: [] }];
+    setMasterTemplates(updatedTemplates);
+    await updateMasterTemplatesToFirebase(updatedTemplates);
     setNewTemplateName('');
   };
 
-  const hapusMasterTemplate = (id) => {
+  const hapusMasterTemplate = async (id) => {
     if (!isLeader) return;
-    setMasterTemplates(masterTemplates.filter(t => t.id !== id));
+    const updatedTemplates = masterTemplates.filter(t => t.id !== id);
+    setMasterTemplates(updatedTemplates);
+    await updateMasterTemplatesToFirebase(updatedTemplates);
   };
 
-  const tambahItemKeMasterInline = (templateId) => {
+  const tambahItemKeMasterInline = async (templateId) => {
     if (!isLeader) return;
     const itemName = templateItemInputs[templateId];
     const itemCat = templateItemCategoryInputs[templateId] || 'Pakaian / Layering';
     if (!itemName || !itemName.trim()) return;
 
-    setMasterTemplates(masterTemplates.map(t => {
+    const updatedTemplates = masterTemplates.map(t => {
       if (t.id === templateId) {
         return { ...t, items: [...t.items, { name: itemName.trim(), category: itemCat }] };
       }
       return t;
-    }));
+    });
+    setMasterTemplates(updatedTemplates);
+    await updateMasterTemplatesToFirebase(updatedTemplates);
     setTemplateItemInputs({ ...templateItemInputs, [templateId]: '' });
   };
 
-  const hapusItemDariMaster = (templateId, itemIndex) => {
+  const hapusItemDariMaster = async (templateId, itemIndex) => {
     if (!isLeader) return;
-    setMasterTemplates(masterTemplates.map(t => {
+    const updatedTemplates = masterTemplates.map(t => {
       if (t.id === templateId) return { ...t, items: t.items.filter((_, idx) => idx !== itemIndex) };
       return t;
-    }));
+    });
+    setMasterTemplates(updatedTemplates);
+    await updateMasterTemplatesToFirebase(updatedTemplates);
   };
 
   // ================= HANDLERS: ECO-WASTE =================
@@ -560,65 +580,71 @@ export default function GearLogistics({
               </div>
 
               <div className="space-y-2.5 max-h-[60vh] overflow-y-auto">
-                {masterTemplates.map(tpl => (
-                  <div key={tpl.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-xs font-bold text-white">{tpl.name}</h4>
-                      {!isManageMode ? (
-                        <button onClick={() => importFromTemplate(tpl.items)} className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-semibold rounded-lg cursor-pointer">Pakai</button>
-                      ) : (
-                        isLeader && <button onClick={() => hapusMasterTemplate(tpl.id)} className="px-2.5 py-1 bg-rose-950/40 text-rose-400 text-[11px] font-semibold rounded-lg cursor-pointer">Hapus</button>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      {tpl.items.length === 0 ? (
-                        <span className="text-[10px] text-slate-500 italic">Belum ada item.</span>
-                      ) : (
-                        tpl.items.map((tItem, idx) => (
-                          <div key={idx} className="flex items-center justify-between px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs">
-                            <span className="text-slate-200">{tItem.name} <span className="text-[10px] text-cyan-400">({tItem.category})</span></span>
-                            {isManageMode && isLeader && <button onClick={() => hapusItemDariMaster(tpl.id, idx)} className="text-slate-500 hover:text-rose-400 cursor-pointer"><X size={12}/></button>}
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                   {isManageMode && isLeader && (
-                      <div className="space-y-2.5 pt-3 border-t border-slate-800">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Item</label>
-                          <input 
-                            type="text" 
-                            value={templateItemInputs[tpl.id] || ''} 
-                            onChange={(e) => setTemplateItemInputs({...templateItemInputs, [tpl.id]: e.target.value})} 
-                            placeholder="Contoh: Jaket Gunung..." 
-                            className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2.5 outline-none focus:border-cyan-500" 
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
-                          <select 
-                            value={templateItemCategoryInputs[tpl.id] || 'Pakaian / Layering'} 
-                            onChange={(e) => setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: e.target.value})} 
-                            className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer focus:border-cyan-500"
-                          >
-                            {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                          </select>
-                        </div>
-
-                        <button 
-                          type="button" 
-                          onClick={() => tambahItemKeMasterInline(tpl.id)} 
-                          className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl cursor-pointer shadow-md transition-all mt-1"
-                        >
-                          + Tambah Item ke Template
-                        </button>
+                {masterTemplates.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic text-center py-6 bg-slate-950/40 rounded-xl border border-slate-800">
+                    Belum ada master template tersedia.
+                  </p>
+                ) : (
+                  masterTemplates.map(tpl => (
+                    <div key={tpl.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-xs font-bold text-white">{tpl.name}</h4>
+                        {!isManageMode ? (
+                          <button onClick={() => importFromTemplate(tpl.items)} className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-semibold rounded-lg cursor-pointer">Pakai</button>
+                        ) : (
+                          isLeader && <button onClick={() => hapusMasterTemplate(tpl.id)} className="px-2.5 py-1 bg-rose-950/40 text-rose-400 text-[11px] font-semibold rounded-lg cursor-pointer">Hapus</button>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      <div className="space-y-1">
+                        {!tpl.items || tpl.items.length === 0 ? (
+                          <span className="text-[10px] text-slate-500 italic">Belum ada item.</span>
+                        ) : (
+                          tpl.items.map((tItem, idx) => (
+                            <div key={idx} className="flex items-center justify-between px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs">
+                              <span className="text-slate-200">{tItem.name} <span className="text-[10px] text-cyan-400">({tItem.category})</span></span>
+                              {isManageMode && isLeader && <button onClick={() => hapusItemDariMaster(tpl.id, idx)} className="text-slate-500 hover:text-rose-400 cursor-pointer"><X size={12}/></button>}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {isManageMode && isLeader && (
+                        <div className="space-y-2.5 pt-3 border-t border-slate-800">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Item</label>
+                            <input 
+                              type="text" 
+                              value={templateItemInputs[tpl.id] || ''} 
+                              onChange={(e) => setTemplateItemInputs({...templateItemInputs, [tpl.id]: e.target.value})} 
+                              placeholder="Contoh: Jaket Gunung..." 
+                              className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2.5 outline-none focus:border-cyan-500" 
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
+                            <select 
+                              value={templateItemCategoryInputs[tpl.id] || 'Pakaian / Layering'} 
+                              onChange={(e) => setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: e.target.value})} 
+                              className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer focus:border-cyan-500"
+                            >
+                              {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
+                          </div>
+
+                          <button 
+                            type="button" 
+                            onClick={() => tambahItemKeMasterInline(tpl.id)} 
+                            className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl cursor-pointer shadow-md transition-all mt-1"
+                          >
+                            + Tambah Item ke Template
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
 
                 {isManageMode && isLeader && (
                   <form onSubmit={tambahMasterTemplate} className="p-3 bg-slate-950 border border-dashed border-slate-700 rounded-xl space-y-2">
@@ -658,7 +684,7 @@ export default function GearLogistics({
                   className="flex items-center gap-2 px-1 cursor-pointer select-none group"
                 >
                   <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-900/80 px-3 py-1 rounded-xl shadow-sm flex items-center gap-2">
-                  {catName} ({itemsInCat.length})
+                    {catName} ({itemsInCat.length})
                   </span>
                   <div className="flex-1 h-[1px] bg-slate-800 group-hover:bg-slate-700 transition-colors"></div>
                   <span className="text-slate-400 text-xs font-bold px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg flex items-center gap-1">

@@ -1172,7 +1172,7 @@ export default function TripManager({ currentUser }) {
                                 onChange={(e) => setSelectedInviteUserUid(e.target.value)}
                                 className="px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white cursor-pointer outline-none focus:border-emerald-500"
                               >
-                                <option value="">-- Pilih User untuk Diundang --</option>
+                                <option value="">Daftar User</option>
                                 {availableUsersToInvite.map(u => (
                                   <option key={u.uid} value={u.uid}>{u.displayName} (@{u.username})</option>
                                 ))}
@@ -1181,7 +1181,7 @@ export default function TripManager({ currentUser }) {
                                 onClick={() => handleDirectInvite(trip)}
                                 className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white text-xs font-semibold rounded-2xl cursor-pointer whitespace-nowrap shadow-md"
                               >
-                                Undang Langsung
+                                Invite
                               </button>
                             </div>
                           )}

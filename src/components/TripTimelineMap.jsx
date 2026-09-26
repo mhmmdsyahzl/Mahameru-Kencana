@@ -209,11 +209,11 @@ export default function TripTimelineMap({ trip, currentUser }) {
           </h3>
           <p className="text-[11px] text-slate-400 mt-0.5">Atur jadwal, rute, dan status progress kegiatan per hari.</p>
         </div>
-        <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-          {itineraries.length} Total Agenda
-        </span>
-      </div>
-
+<span className="text-[11px] font-medium px-3.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 inline-flex flex-col items-center justify-center text-center leading-tight">
+  <span>{itineraries.length} Total</span>
+  <span>Rundown</span>
+</span>
+</div>
       {/* --- FORM INPUT / EDIT INLINE --- */}
       <form onSubmit={handleSaveAgenda} className={`bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border shadow-xl space-y-4 transition-all ${editingAgendaId ? 'border-cyan-500/80 ring-2 ring-cyan-500/20' : 'border-slate-800/90'}`}>
         <div className="flex items-center justify-between px-0.5">

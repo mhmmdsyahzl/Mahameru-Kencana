@@ -44,11 +44,20 @@ export default function GearLogistics({
     }
   };
 
-  // ================= STATE PERSONAL GEAR =================
-  const [personalGear, setPersonalGear] = useState([
-    { id: 1, name: 'Carrier 45L+', qty: 1, checked: true },
-    { id: 2, name: 'Sleeping Bag', qty: 1, checked: false },
-  ]);
+  // ================= STATE PERSONAL GEAR (DENGAN LOCALSTORAGE) =================
+  const [personalGear, setPersonalGear] = useState(() => {
+    const saved = localStorage.getItem(`personal_gear_${currentUser?.uid}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return [
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`personal_gear_${currentUser?.uid}`, JSON.stringify(personalGear));
+  }, [personalGear, currentUser]);
+
   const [newPersonalItem, setNewPersonalItem] = useState('');
   const [newPersonalQty, setNewPersonalQty] = useState(1);
   const [editingPersonalId, setEditingPersonalId] = useState(null);
@@ -63,10 +72,21 @@ export default function GearLogistics({
   ]);
   const [templateItemInputs, setTemplateItemInputs] = useState({});
 
-  // ================= STATE ECO-WASTE =================
-  const [ecoWaste, setEcoWaste] = useState([
-    { id: 1, name: 'Bungkus Mie Instan', naik: 10, turun: 10, status: 'clear' },
-  ]);
+  // ================= STATE ECO-WASTE (DENGAN LOCALSTORAGE) =================
+  const [ecoWaste, setEcoWaste] = useState(() => {
+    const saved = localStorage.getItem(`eco_waste_${tripId || 'default'}`);
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { console.error(e); }
+    }
+    return [
+      { id: 1, name: 'Bungkus Mie Instan', naik: 10, turun: 10, status: 'clear' },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`eco_waste_${tripId || 'default'}`, JSON.stringify(ecoWaste));
+  }, [ecoWaste, tripId]);
+
   const [isAddingWaste, setIsAddingWaste] = useState(false);
   const [newWasteItem, setNewWasteItem] = useState('');
 
@@ -180,6 +200,10 @@ export default function GearLogistics({
     setEcoWaste([...ecoWaste, { id: Date.now(), name: newWasteItem, naik: 1, turun: 0, status: 'warning' }]);
     setNewWasteItem('');
     setIsAddingWaste(false);
+  };
+
+  const hapusWasteItem = (id) => {
+    setEcoWaste(ecoWaste.filter(item => item.id !== id));
   };
 
 
@@ -311,10 +335,76 @@ export default function GearLogistics({
               <p className="text-cyan-400 text-xs font-bold mb-0.5 flex items-center gap-1.5"><Sparkles size={13}/> Checklist Milik {currentUser?.displayName}</p>
               <p className="text-slate-400 text-[11px]">Data ini terisolasi cuma buat akun lo. Tarik template dari Leader biar ga lupa bawaan.</p>
             </div>
-            <button onClick={() => {setShowTemplateModal(true); setIsManageMode(false);}} className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md">
-              <Download size={14} /> Import Template
+            <button onClick={() => {setShowTemplateModal(!showTemplateModal); setIsManageMode(false);}} className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md">
+              <Download size={14} /> {showTemplateModal ? 'Tutup Template' : 'Import Template'}
             </button>
           </div>
+
+          {/* TEMPLATE CONTAINER (DROPDOWN / EXPAND KE BAWAH) */}
+          {showTemplateModal && (
+            <div className="bg-slate-900 border border-cyan-500/40 rounded-2xl p-4 space-y-3 animate-in slide-in-from-top-2 duration-200 shadow-xl">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 className="text-xs font-bold text-cyan-400 flex items-center gap-2">
+                  <Layers size={14}/> {isManageMode ? 'Kelola Master Template' : 'Pilih Master Template'}
+                </h3>
+                <button onClick={() => {setShowTemplateModal(false); setIsManageMode(false);}} className="text-slate-400 hover:text-white p-1 cursor-pointer"><X size={15}/></button>
+              </div>
+
+              <div className="space-y-2.5 max-h-[60vh] overflow-y-auto">
+                {masterTemplates.map(tpl => (
+                  <div key={tpl.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-xs font-bold text-white">{tpl.name}</h4>
+                      {!isManageMode ? (
+                        <button onClick={() => importFromTemplate(tpl.items)} className="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-semibold rounded-lg cursor-pointer">Pakai</button>
+                      ) : (
+                        isLeader && <button onClick={() => hapusMasterTemplate(tpl.id)} className="px-2.5 py-1 bg-rose-950/40 text-rose-400 text-[11px] font-semibold rounded-lg cursor-pointer">Hapus</button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {tpl.items.length === 0 ? (
+                        <span className="text-[10px] text-slate-500 italic">Belum ada item.</span>
+                      ) : (
+                        tpl.items.map((item, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-900 border border-slate-800 text-slate-300 text-[11px] rounded-lg">
+                            {item}
+                            {isManageMode && isLeader && <button onClick={() => hapusItemDariMaster(tpl.id, idx)} className="text-slate-500 hover:text-rose-400 ml-0.5 cursor-pointer"><X size={11}/></button>}
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {isManageMode && isLeader && (
+                      <div className="flex gap-2 pt-1 border-t border-slate-800/80">
+                        <input type="text" value={templateItemInputs[tpl.id] || ''} onChange={(e) => handleTemplateItemInput(tpl.id, e.target.value)} placeholder="Tambah item lalu enter..." className="flex-1 bg-slate-900 border border-slate-700 text-white text-[11px] rounded-lg px-2.5 py-1.5 outline-none focus:border-cyan-500" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); tambahItemKeMasterInline(tpl.id); }}} />
+                        <button type="button" onClick={() => tambahItemKeMasterInline(tpl.id)} className="px-2.5 bg-cyan-600 text-white text-[11px] font-semibold rounded-lg cursor-pointer">Tambah</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {isManageMode && isLeader && (
+                  <form onSubmit={tambahMasterTemplate} className="p-3 bg-slate-950 border border-dashed border-slate-700 rounded-xl space-y-2">
+                    <p className="text-[11px] font-semibold text-slate-300">Buat Master Template Baru</p>
+                    <div className="flex gap-2">
+                      <input type="text" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="Nama Template..." className="flex-1 bg-slate-900 border border-slate-700 text-white text-[11px] rounded-lg px-2.5 py-1.5 outline-none focus:border-cyan-500" />
+                      <button type="submit" className="px-3 bg-cyan-600 text-white text-[11px] font-semibold rounded-lg cursor-pointer">Buat</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px]">
+                {isLeader ? (
+                  <button onClick={() => setIsManageMode(!isManageMode)} className="text-cyan-400 hover:underline font-medium cursor-pointer">
+                    {isManageMode ? '← Kembali ke Pilih' : '⚙️ Kelola Template'}
+                  </button>
+                ) : <span className="text-slate-500 text-[10px]">Cuma Leader yang bisa ngedit template.</span>}
+                <button onClick={() => {setShowTemplateModal(false); setIsManageMode(false);}} className="text-slate-400 hover:text-white cursor-pointer">Tutup</button>
+              </div>
+            </div>
+          )}
 
           {personalGear.map(item => (
             <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${item.checked && editingPersonalId !== item.id ? 'bg-cyan-950/20 border-cyan-500/30 text-slate-400' : 'bg-slate-900/90 border-slate-800/90 text-white hover:border-cyan-500/40'}`}>
@@ -358,76 +448,6 @@ export default function GearLogistics({
             </div>
             <button type="submit" className="px-5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white rounded-2xl cursor-pointer shadow-md"><Plus size={16}/></button>
           </form>
-
-          {/* MODAL TEMPLATE */}
-          {showTemplateModal && (
-            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-                <div className="p-5 flex justify-between items-center border-b border-slate-800 bg-slate-950/50">
-                  <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Layers className="text-cyan-400" size={16}/> {isManageMode ? 'Kelola Master Template' : 'Pilih Master Template'}
-                    </h3>
-                  </div>
-                  <button onClick={() => {setShowTemplateModal(false); setIsManageMode(false);}} className="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-xl cursor-pointer"><X size={16}/></button>
-                </div>
-                
-                <div className="p-5 flex-1 overflow-y-auto space-y-3">
-                  {masterTemplates.map(tpl => (
-                    <div key={tpl.id} className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl space-y-2.5">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-xs font-bold text-cyan-400">{tpl.name}</h4>
-                        {!isManageMode ? (
-                          <button onClick={() => importFromTemplate(tpl.items)} className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl cursor-pointer shadow-sm">Pakai Template</button>
-                        ) : (
-                          isLeader && <button onClick={() => hapusMasterTemplate(tpl.id)} className="px-3 py-1.5 bg-rose-950/40 border border-rose-900/50 text-rose-400 text-xs font-semibold rounded-xl cursor-pointer">Hapus</button>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {tpl.items.length === 0 ? (
-                          <span className="text-[11px] text-slate-500 italic">Belum ada item.</span>
-                        ) : (
-                          tpl.items.map((item, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl">
-                              {item}
-                              {isManageMode && isLeader && <button onClick={() => hapusItemDariMaster(tpl.id, idx)} className="text-slate-500 hover:text-rose-400 ml-1 cursor-pointer"><X size={12}/></button>}
-                            </span>
-                          ))
-                        )}
-                      </div>
-
-                      {isManageMode && isLeader && (
-                        <div className="flex gap-2 pt-2 border-t border-slate-800">
-                          <input type="text" value={templateItemInputs[tpl.id] || ''} onChange={(e) => handleTemplateItemInput(tpl.id, e.target.value)} placeholder="Tambah item baru lalu enter..." className="flex-1 bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-cyan-500" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); tambahItemKeMasterInline(tpl.id); }}} />
-                          <button type="button" onClick={() => tambahItemKeMasterInline(tpl.id)} className="px-3 bg-cyan-600 text-white text-xs font-semibold rounded-xl cursor-pointer">Tambah</button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {isManageMode && isLeader && (
-                    <form onSubmit={tambahMasterTemplate} className="p-4 bg-slate-950 border border-dashed border-slate-700 rounded-2xl space-y-2">
-                      <p className="text-xs font-semibold text-slate-300">Buat Master Template Baru</p>
-                      <div className="flex gap-2">
-                        <input type="text" value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="Nama Template..." className="flex-1 bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-cyan-500" />
-                        <button type="submit" className="px-4 bg-cyan-600 text-white text-xs font-semibold rounded-xl cursor-pointer">Buat</button>
-                      </div>
-                    </form>
-                  )}
-                </div>
-
-                <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex justify-between items-center">
-                  {isLeader ? (
-                     <button onClick={() => setIsManageMode(!isManageMode)} className="text-xs font-semibold text-cyan-400 hover:underline cursor-pointer">
-                       {isManageMode ? '← Kembali ke Pilih' : '⚙️ Kelola Template'}
-                     </button>
-                  ) : <span className="text-[10px] text-slate-500">Cuma Leader yang bisa ngedit template.</span>}
-                  <button onClick={() => {setShowTemplateModal(false); setIsManageMode(false);}} className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer">Tutup</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -443,27 +463,40 @@ export default function GearLogistics({
           </div>
           
           {ecoWaste.map(item => (
-            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-md">
-              <p className="text-xs sm:text-sm font-semibold text-white">{item.name}</p>
-              <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
+            <div key={item.id} className="p-4 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs sm:text-sm font-semibold text-white">{item.name}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Naik</span>
-                  <div className="flex items-center bg-slate-950 rounded-xl border border-slate-800 p-0.5">
-                    <button onClick={() => updateWasteCount(item.id, 'naik', -1)} className="p-1.5 text-slate-400 hover:text-white cursor-pointer"><Minus size={13}/></button>
-                    <span className="w-7 text-center text-xs font-bold text-white font-mono">{item.naik}</span>
-                    <button onClick={() => updateWasteCount(item.id, 'naik', 1)} className="p-1.5 text-slate-400 hover:text-white cursor-pointer"><Plus size={13}/></button>
+                  <div className="flex justify-end">
+                    {item.status === 'clear' ? (
+                      <span className="px-2.5 py-1.5 bg-emerald-950/80 border border-emerald-900 text-emerald-400 rounded-xl text-[10px] font-extrabold font-mono">CLEAR</span>
+                    ) : (
+                      <span className="px-2.5 py-1.5 bg-amber-950/80 border border-amber-900 text-amber-400 rounded-xl text-[10px] font-extrabold font-mono">MINUS {item.naik - item.turun}</span>
+                    )}
+                  </div>
+                  <button onClick={() => hapusWasteItem(item.id)} className="text-slate-500 hover:text-rose-400 p-1.5 rounded-xl hover:bg-rose-950/30 cursor-pointer transition-colors">
+                    <X size={15}/>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/60">
+                <div className="flex items-center justify-between bg-slate-950 rounded-xl border border-slate-800 p-1.5">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold pl-1">Naik</span>
+                  <div className="flex items-center">
+                    <button onClick={() => updateWasteCount(item.id, 'naik', -1)} className="p-1 text-slate-400 hover:text-white cursor-pointer"><Minus size={12}/></button>
+                    <span className="w-6 text-center text-xs font-bold text-white font-mono">{item.naik}</span>
+                    <button onClick={() => updateWasteCount(item.id, 'naik', 1)} className="p-1 text-slate-400 hover:text-white cursor-pointer"><Plus size={12}/></button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">Turun</span>
-                  <div className="flex items-center bg-slate-950 rounded-xl border border-slate-800 p-0.5">
-                    <button onClick={() => updateWasteCount(item.id, 'turun', -1)} className="p-1.5 text-slate-400 hover:text-white cursor-pointer"><Minus size={13}/></button>
-                    <span className="w-7 text-center text-xs font-bold text-amber-400 font-mono">{item.turun}</span>
-                    <button onClick={() => updateWasteCount(item.id, 'turun', 1)} className="p-1.5 text-slate-400 hover:text-white cursor-pointer"><Plus size={13}/></button>
+
+                <div className="flex items-center justify-between bg-slate-950 rounded-xl border border-slate-800 p-1.5">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold pl-1">Turun</span>
+                  <div className="flex items-center">
+                    <button onClick={() => updateWasteCount(item.id, 'turun', -1)} className="p-1 text-slate-400 hover:text-white cursor-pointer"><Minus size={12}/></button>
+                    <span className="w-6 text-center text-xs font-bold text-amber-400 font-mono">{item.turun}</span>
+                    <button onClick={() => updateWasteCount(item.id, 'turun', 1)} className="p-1 text-slate-400 hover:text-white cursor-pointer"><Plus size={12}/></button>
                   </div>
-                </div>
-                <div className="w-20 flex justify-end">
-                  {item.status === 'clear' ? <span className="px-2.5 py-1.5 bg-emerald-950/80 border border-emerald-900 text-emerald-400 rounded-xl text-[10px] font-extrabold font-mono">CLEAR</span> : <span className="px-2.5 py-1.5 bg-amber-950/80 border border-amber-900 text-amber-400 rounded-xl text-[10px] font-extrabold font-mono">MINUS {item.naik - item.turun}</span>}
                 </div>
               </div>
             </div>

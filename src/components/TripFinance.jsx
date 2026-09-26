@@ -402,7 +402,7 @@ export default function TripFinance({ trip, currentUser }) {
                     </div>
 
                     <div className="flex gap-2 pt-1">
-                      <input type="number" placeholder="Nominal cicilan (Contoh: 20000)" value={cicilanInputs[m.uid] || ''} onChange={(e) => setCicilanInputs({ ...cicilanInputs, [m.uid]: e.target.value })} className="flex-1 bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500/50"/>
+                      <input type="number" placeholder="Nominal cicilan" value={cicilanInputs[m.uid] || ''} onChange={(e) => setCicilanInputs({ ...cicilanInputs, [m.uid]: e.target.value })} className="flex-1 bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500/50"/>
                       <button onClick={() => handleAddCicilan(m.uid)} className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold cursor-pointer shadow-md flex items-center gap-1">
                         <Plus size={13} /> Setor
                       </button>
@@ -526,7 +526,7 @@ export default function TripFinance({ trip, currentUser }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <input type="text" placeholder="Keterangan (Contoh: Gerbang Tol)" value={tolNote} onChange={(e) => setTolNote(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-blue-500/50" />
+                <input type="text" placeholder="Keterangan (Contoh: Gerbang Tol Dumai)" value={tolNote} onChange={(e) => setTolNote(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-blue-500/50" />
                 <input type="number" placeholder="Nominal Bayar (Rp)" value={tolCost} onChange={(e) => setTolCost(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50" />
                 <select value={tolUserUid} onChange={(e) => setTolUserUid(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3 text-xs text-white focus:outline-none cursor-pointer">
                   {members.map(m => <option key={m.uid} value={m.uid}>Dibayar oleh: {m.displayName}</option>)}

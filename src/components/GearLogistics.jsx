@@ -57,6 +57,8 @@ export default function GearLogistics({
   const [masterTemplates, setMasterTemplates] = useState([]);
   const [templateItemInputs, setTemplateItemInputs] = useState({});
   const [templateItemCategoryInputs, setTemplateItemCategoryInputs] = useState({});
+  const [templateCustomCategoryInputs, setTemplateCustomCategoryInputs] = useState({});
+  const [isAddingTemplateCustomCat, setIsAddingTemplateCustomCat] = useState({});
 
   useEffect(() => {
     if (!tripId) return;
@@ -614,13 +616,69 @@ export default function GearLogistics({
 
                           <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
-                            <select 
-                              value={templateItemCategoryInputs[tpl.id] || 'Pakaian / Layering'} 
-                              onChange={(e) => setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: e.target.value})} 
-                              className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer focus:border-cyan-500"
-                            >
-                              {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
+                            
+                            {!isAddingTemplateCustomCat[tpl.id] ? (
+                              <select 
+                                value={templateItemCategoryInputs[tpl.id] || 'Pakaian / Layering'} 
+                                onChange={(e) => {
+                                  if (e.target.value === 'ADD_NEW_TEMPLATE_CAT') {
+                                    setIsAddingTemplateCustomCat({...isAddingTemplateCustomCat, [tpl.id]: true});
+                                  } else {
+                                    setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: e.target.value});
+                                  }
+                                }} 
+                                className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer focus:border-cyan-500"
+                              >
+                                {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                <option value="ADD_NEW_TEMPLATE_CAT">+ Tambah Kategori Baru</option>
+                              </select>
+                            ) : (
+                              <div className="flex gap-2">
+                                <input 
+                                  type="text" 
+                                  placeholder="Ketik kategori baru..." 
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      const newCat = e.target.value.trim();
+                                      if (newCat) {
+                                        if (!allCategories.includes(newCat)) {
+                                          setAllCategories([...allCategories, newCat]);
+                                        }
+                                        setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: newCat});
+                                        setIsAddingTemplateCustomCat({...isAddingTemplateCustomCat, [tpl.id]: false});
+                                      }
+                                    }
+                                  }}
+                                  className="flex-1 bg-slate-900 border border-cyan-500 text-white text-xs rounded-xl px-3 py-2.5 outline-none" 
+                                  autoFocus 
+                                />
+                                <button 
+                                  type="button" 
+                                  onClick={(e) => {
+                                    const inputEl = e.currentTarget.previousElementSibling;
+                                    const newCat = inputEl.value.trim();
+                                    if (newCat) {
+                                      if (!allCategories.includes(newCat)) {
+                                        setAllCategories([...allCategories, newCat]);
+                                      }
+                                      setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: newCat});
+                                    }
+                                    setIsAddingTemplateCustomCat({...isAddingTemplateCustomCat, [tpl.id]: false});
+                                  }}
+                                  className="px-3 bg-cyan-600 text-white text-xs rounded-xl font-semibold cursor-pointer"
+                                >
+                                  OK
+                                </button>
+                                <button 
+                                  type="button" 
+                                  onClick={() => setIsAddingTemplateCustomCat({...isAddingTemplateCustomCat, [tpl.id]: false})} 
+                                  className="px-3 bg-slate-800 text-slate-300 text-xs rounded-xl cursor-pointer"
+                                >
+                                  Batal
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           <button 

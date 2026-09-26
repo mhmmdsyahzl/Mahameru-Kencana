@@ -458,7 +458,7 @@ export default function GearLogistics({
                                           <span className={`text-xs font-bold font-mono px-1 ${
                                             isFull ? 'text-emerald-400' : isEmpty ? 'text-rose-400' : 'text-cyan-400'
                                           }`}>
-                                            {checkedCount} dari {totalQty} ada
+                                            {checkedCount} / {totalQty}
                                           </span>
 
                                           <button 
@@ -584,15 +584,37 @@ export default function GearLogistics({
                       )}
                     </div>
 
-                    {isManageMode && isLeader && (
-                      <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                        <div className="flex gap-2">
-                          <input type="text" value={templateItemInputs[tpl.id] || ''} onChange={(e) => setTemplateItemInputs({...templateItemInputs, [tpl.id]: e.target.value})} placeholder="Nama Item..." className="flex-1 bg-slate-900 border border-slate-700 text-white text-[11px] rounded-lg px-2.5 py-1.5 outline-none focus:border-cyan-500" />
-                          <select value={templateItemCategoryInputs[tpl.id] || 'Pakaian / Layering'} onChange={(e) => setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: e.target.value})} className="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] rounded-lg px-2 outline-none">
+                   {isManageMode && isLeader && (
+                      <div className="space-y-2.5 pt-3 border-t border-slate-800">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Item</label>
+                          <input 
+                            type="text" 
+                            value={templateItemInputs[tpl.id] || ''} 
+                            onChange={(e) => setTemplateItemInputs({...templateItemInputs, [tpl.id]: e.target.value})} 
+                            placeholder="Contoh: Jaket Gunung..." 
+                            className="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2.5 outline-none focus:border-cyan-500" 
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
+                          <select 
+                            value={templateItemCategoryInputs[tpl.id] || 'Pakaian / Layering'} 
+                            onChange={(e) => setTemplateItemCategoryInputs({...templateItemCategoryInputs, [tpl.id]: e.target.value})} 
+                            className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer focus:border-cyan-500"
+                          >
                             {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                           </select>
                         </div>
-                        <button type="button" onClick={() => tambahItemKeMasterInline(tpl.id)} className="w-full py-1.5 bg-cyan-600 text-white text-[11px] font-semibold rounded-lg cursor-pointer">Tambah Item ke Template</button>
+
+                        <button 
+                          type="button" 
+                          onClick={() => tambahItemKeMasterInline(tpl.id)} 
+                          className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold rounded-xl cursor-pointer shadow-md transition-all mt-1"
+                        >
+                          + Tambah Item ke Template
+                        </button>
                       </div>
                     )}
                   </div>
@@ -635,8 +657,8 @@ export default function GearLogistics({
                   onClick={() => setCollapsedPersonalCategories(prev => ({ ...prev, [catName]: !prev[catName] }))}
                   className="flex items-center gap-2 px-1 cursor-pointer select-none group"
                 >
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-900/80 px-3 py-1 rounded-xl shadow-sm flex items-center gap-2">
-                    🎒 {catName} ({itemsInCat.length})
+                  <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-900/80 px-3 py-1 rounded-xl shadow-sm flex items-center gap-2">
+                  {catName} ({itemsInCat.length})
                   </span>
                   <div className="flex-1 h-[1px] bg-slate-800 group-hover:bg-slate-700 transition-colors"></div>
                   <span className="text-slate-400 text-xs font-bold px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg flex items-center gap-1">
@@ -738,7 +760,7 @@ export default function GearLogistics({
                                           <span className={`text-xs font-bold font-mono px-1 ${
                                             isFull ? 'text-cyan-400' : isEmpty ? 'text-rose-400' : 'text-emerald-400'
                                           }`}>
-                                            {checkedCount} dari {totalQty} ada
+                                            {checkedCount} / {totalQty}
                                           </span>
 
                                           <button 

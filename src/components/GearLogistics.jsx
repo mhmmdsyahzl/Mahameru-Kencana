@@ -20,6 +20,14 @@ export default function GearLogistics({
   const [ecoWaste, setEcoWaste] = useState([]);
   const [isAddingWaste, setIsAddingWaste] = useState(false);
   const [newWasteItem, setNewWasteItem] = useState('');
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
+const toggleCategoryCollapse = (categoryName) => {
+  setCollapsedCategories(prev => ({
+    ...prev,
+    [categoryName]: !prev[categoryName]
+  }));
+};
 
   // ================= STATE PERSONAL GEAR (TERISOLASI TIAP USER - FIREBASE SYNC) =================
   const [personalGear, setPersonalGear] = useState([]);
@@ -244,189 +252,202 @@ export default function GearLogistics({
       </div>
 
 {/* ================= TAB 1: GROUP ================= */}
-      {activeTab === 'group' && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          {['Punya Pribadi', 'Sewa', 'Beli Patungan'].map(methodCategory => {
-            const itemsInGroup = [...groupGear]
-              .filter(item => (item.method || 'Punya Pribadi') === methodCategory)
-              .sort((a, b) => (b.qty || 1) - (a.qty || 1));
+{activeTab === 'group' && (
+  <div className="space-y-4 animate-in fade-in duration-200">
+    {['Punya Pribadi', 'Sewa', 'Beli Patungan'].map(methodCategory => {
+      const itemsInGroup = [...groupGear]
+        .filter(item => (item.method || 'Punya Pribadi') === methodCategory)
+        .sort((a, b) => (b.qty || 1) - (a.qty || 1));
 
-            if (itemsInGroup.length === 0) return null;
+      if (itemsInGroup.length === 0) return null;
 
-            return (
-              <div key={methodCategory} className="space-y-3">
-                {/* Header Kategori */}
-                <div className="flex items-center gap-2 px-1">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-900/80 px-3 py-1 rounded-xl shadow-sm">
-                    📦 {methodCategory}
-                  </span>
-                  <div className="flex-1 h-[1px] bg-slate-800"></div>
-                </div>
+      const isCollapsed = Boolean(collapsedCategories[methodCategory]);
 
-                {/* List Item dalam Kategori */}
-                {itemsInGroup.map(item => {
-                  const checkedCount = item.checkedIndices?.length || 0;
-                  const totalQty = item.qty || 1;
-                  const isFull = checkedCount >= totalQty;
-                  const isEmpty = checkedCount === 0;
+      return (
+        <div key={methodCategory} className="space-y-3">
+          {/* Header Kategori (Bisa diklik buat Buka-Tutup) */}
+          <div 
+            onClick={() => toggleCategoryCollapse(methodCategory)}
+            className="flex items-center gap-2 px-1 cursor-pointer select-none group"
+          >
+            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-900/80 px-3 py-1 rounded-xl shadow-sm flex items-center gap-2">
+              📦 {methodCategory} ({itemsInGroup.length})
+            </span>
+            <div className="flex-1 h-[1px] bg-slate-800 group-hover:bg-slate-700 transition-colors"></div>
+            <span className="text-slate-400 text-xs font-bold px-2 py-1 bg-slate-900 border border-slate-800 rounded-lg flex items-center gap-1">
+              {isCollapsed ? 'Buka ▾' : 'Tutup ▴'}
+            </span>
+          </div>
 
-                  let cardColorClass = "bg-slate-900/90 border-slate-800/90 text-white hover:border-emerald-500/40";
-                  if (totalQty > 1) {
-                    if (isEmpty) {
-                      cardColorClass = "bg-rose-950/20 border-rose-500/40 text-slate-300";
-                    } else if (isFull) {
-                      cardColorClass = "bg-emerald-950/20 border-emerald-500/30 text-slate-300";
-                    } else {
-                      cardColorClass = "bg-cyan-950/20 border-cyan-500/30 text-slate-300";
-                    }
+          {/* List Item dalam Kategori (Hanya tampil jika tidak di-collapse) */}
+          {!isCollapsed && (
+            <div className="space-y-3 animate-in fade-in duration-200">
+              {itemsInGroup.map(item => {
+                const checkedCount = item.checkedIndices?.length || 0;
+                const totalQty = item.qty || 1;
+                const isFull = checkedCount >= totalQty;
+                const isEmpty = checkedCount === 0;
+
+                let cardColorClass = "bg-slate-900/90 border-slate-800/90 text-white hover:border-emerald-500/40";
+                if (totalQty > 1) {
+                  if (isEmpty) {
+                    cardColorClass = "bg-rose-950/20 border-rose-500/40 text-slate-300";
+                  } else if (isFull) {
+                    cardColorClass = "bg-emerald-950/20 border-emerald-500/30 text-slate-300";
                   } else {
-                    cardColorClass = isFull 
-                      ? "bg-emerald-950/20 border-emerald-500/30 text-slate-300" 
-                      : "bg-rose-950/20 border-rose-500/40 text-white hover:border-rose-500/60";
+                    cardColorClass = "bg-cyan-950/20 border-cyan-500/30 text-slate-300";
                   }
+                } else {
+                  cardColorClass = isFull 
+                    ? "bg-emerald-950/20 border-emerald-500/30 text-slate-300" 
+                    : "bg-rose-950/20 border-rose-500/40 text-white hover:border-rose-500/60";
+                }
 
-                  return (
-                    <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${cardColorClass}`}>
-                      {editingGroupId === item.id ? (
-                        <div className="space-y-3">
-                          <div className="flex gap-2">
-                            <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang..." className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" />
-                            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
-                              <span className="text-[10px] font-bold text-slate-400">QTY:</span>
-                              <input type="number" min="1" value={editGroupForm.qty} onChange={(e) => setEditGroupForm({...editGroupForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <select value={editGroupForm.pj} onChange={(e) => setEditGroupForm({...editGroupForm, pj: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
-                              <option value="Tim (Bawaan Bersama)">Tim (Bawaan Bersama)</option>
-                              {tripMembers.map((member, mIdx) => {
-                                const mName = typeof member === 'string' ? member : (member.displayName || member.name || member.username || 'Anggota');
-                                const mUid = member.uid || mIdx;
-                                return <option key={mUid} value={mName}>{mName}</option>;
-                              })}
-                            </select>
-                            <select value={editGroupForm.method} onChange={(e) => setEditGroupForm({...editGroupForm, method: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
-                              <option value="Punya Pribadi">Punya Pribadi</option>
-                              <option value="Sewa">Sewa</option>
-                              <option value="Beli Patungan">Beli Patungan</option>
-                            </select>
-                          </div>
-                          <div className="flex justify-end gap-2 pt-1">
-                            <button onClick={() => setEditingGroupId(null)} className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Batal</button>
-                            <button onClick={handleEditGroupSave} className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-500 cursor-pointer shadow-md"><Save size={14}/> Simpan</button>
+                return (
+                  <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${cardColorClass}`}>
+                    {editingGroupId === item.id ? (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang..." className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" />
+                          <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
+                            <span className="text-[10px] font-bold text-slate-400">QTY:</span>
+                            <input type="number" min="1" value={editGroupForm.qty} onChange={(e) => setEditGroupForm({...editGroupForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
                           </div>
                         </div>
-                      ) : (
-                        <div className="flex items-start justify-between cursor-pointer gap-3" onClick={async (e) => {
-                          e.stopPropagation();
-                          if (editingGroupId || totalQty > 1) return;
-                          const isChecked = checkedCount > 0;
-                          const updatedIndices = isChecked ? [] : [0];
-                          const newStatus = updatedIndices.length > 0 ? 'ready' : 'pending';
-                          const updated = groupGear.map(g => 
-                            g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
-                          );
-                          await updateGroupGearToFirebase(updated);
-                        }}>
-                          
-                          <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                            {totalQty <= 1 ? (
-                              <div className="shrink-0 pt-0.5">
-                                {isFull ? (
-                                  <CheckCircle2 size={20} className="text-emerald-400" />
-                                ) : (
-                                  <Circle size={20} className="text-rose-500 animate-pulse" />
-                                )}
-                              </div>
-                            ) : null}
-
-                            <div className="min-w-0 flex-1 space-y-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className={`text-xs sm:text-sm font-bold leading-snug ${isFull ? 'text-slate-400 line-through' : 'text-white'}`}>
-                                  {item.name}
-                                </p>
-                                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${
-                                  isFull ? 'bg-emerald-950/80 text-emerald-400 border-emerald-900' : isEmpty ? 'bg-rose-950/80 text-rose-400 border-rose-900' : 'bg-cyan-950/80 text-cyan-400 border-cyan-900'
-                                }`}>
-                                  {totalQty}x
-                                </span>
-                              </div>
-
-                              <div className="text-[11px] text-slate-300 flex items-center gap-1.5 font-medium">
-                                <Users size={12} className={isFull ? "text-emerald-400 shrink-0" : isEmpty ? "text-rose-400 shrink-0" : "text-cyan-400 shrink-0"}/> 
-                                <span className="truncate">{item.pj}</span>
-                              </div>
-
-                              <div>
-                                <span className="inline-block px-2 py-0.5 bg-slate-950 border border-slate-800 text-slate-400 text-[10px] font-semibold rounded-lg uppercase tracking-wider">
-                                  {item.method}
-                                </span>
-                              </div>
-
-                              {totalQty > 1 && (
-                                <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                                  <div className={`inline-flex items-center justify-between rounded-xl border px-2 py-1 ${
-                                    isFull ? 'bg-emerald-950/40 border-emerald-800/80' : isEmpty ? 'bg-rose-950/40 border-rose-800/80' : 'bg-cyan-950/40 border-cyan-800/80'
-                                  }`}>
-                                    <div className="flex items-center gap-2">
-                                      <button 
-                                        type="button"
-                                        onClick={async () => {
-                                          if (editingGroupId) return;
-                                          if (checkedCount <= 0) return;
-                                          const updatedIndices = Array.from({ length: checkedCount - 1 }, (_, i) => i);
-                                          const newStatus = updatedIndices.length >= totalQty ? 'ready' : 'pending';
-                                          const updated = groupGear.map(g => 
-                                            g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
-                                          );
-                                          await updateGroupGearToFirebase(updated);
-                                        }}
-                                        className="p-1 text-slate-400 hover:text-white cursor-pointer"
-                                      >
-                                        <Minus size={12}/>
-                                      </button>
-                                      
-                                      <span className={`text-xs font-bold font-mono px-1 ${
-                                        isFull ? 'text-emerald-400' : isEmpty ? 'text-rose-400' : 'text-cyan-400'
-                                      }`}>
-                                        {checkedCount} dari {totalQty} ada
-                                      </span>
-
-                                      <button 
-                                        type="button"
-                                        onClick={async () => {
-                                          if (editingGroupId) return;
-                                          if (checkedCount >= totalQty) return;
-                                          const updatedIndices = Array.from({ length: checkedCount + 1 }, (_, i) => i);
-                                          const newStatus = updatedIndices.length >= totalQty ? 'ready' : 'pending';
-                                          const updated = groupGear.map(g => 
-                                            g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
-                                          );
-                                          await updateGroupGearToFirebase(updated);
-                                        }}
-                                        className="p-1 text-slate-400 hover:text-white cursor-pointer"
-                                      >
-                                        <Plus size={12}/>
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <select value={editGroupForm.pj} onChange={(e) => setEditGroupForm({...editGroupForm, pj: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+                            <option value="Tim (Bawaan Bersama)">Tim (Bawaan Bersama)</option>
+                            {tripMembers.map((member, mIdx) => {
+                              const mName = typeof member === 'string' ? member : (member.displayName || member.name || member.username || 'Anggota');
+                              const mUid = member.uid || mIdx;
+                              return <option key={mUid} value={mName}>{mName}</option>;
+                            })}
+                          </select>
+                          <select value={editGroupForm.method} onChange={(e) => setEditGroupForm({...editGroupForm, method: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+                            <option value="Punya Pribadi">Punya Pribadi</option>
+                            <option value="Sewa">Sewa</option>
+                            <option value="Beli Patungan">Beli Patungan</option>
+                          </select>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-1">
+                          <button onClick={() => setEditingGroupId(null)} className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Batal</button>
+                          <button onClick={handleEditGroupSave} className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-500 cursor-pointer shadow-md"><Save size={14}/> Simpan</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between cursor-pointer gap-3" onClick={async (e) => {
+                        e.stopPropagation();
+                        if (editingGroupId || totalQty > 1) return;
+                        const isChecked = checkedCount > 0;
+                        const updatedIndices = isChecked ? [] : [0];
+                        const newStatus = updatedIndices.length > 0 ? 'ready' : 'pending';
+                        const updated = groupGear.map(g => 
+                          g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
+                        );
+                        await updateGroupGearToFirebase(updated);
+                      }}>
+                        
+                        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                          {totalQty <= 1 ? (
+                            <div className="shrink-0 pt-0.5">
+                              {isFull ? (
+                                <CheckCircle2 size={20} className="text-emerald-400" />
+                              ) : (
+                                <Circle size={20} className="text-rose-500 animate-pulse" />
                               )}
                             </div>
-                          </div>
+                          ) : null}
 
-                          <div className="flex items-center gap-1 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
-                            <button onClick={(e) => { e.stopPropagation(); setEditGroupForm(item); setEditingGroupId(item.id); }} className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/40 rounded-xl cursor-pointer transition-colors"><Edit3 size={15} /></button>
-                            <button onClick={(e) => hapusGroupGear(e, item.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl cursor-pointer transition-colors"><X size={15} /></button>
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className={`text-xs sm:text-sm font-bold leading-snug ${isFull ? 'text-slate-400 line-through' : 'text-white'}`}>
+                                {item.name}
+                              </p>
+                              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                                isFull ? 'bg-emerald-950/80 text-emerald-400 border-emerald-900' : isEmpty ? 'bg-rose-950/80 text-rose-400 border-rose-900' : 'bg-cyan-950/80 text-cyan-400 border-cyan-900'
+                              }`}>
+                                {totalQty}x
+                              </span>
+                            </div>
+
+                            <div className="text-[11px] text-slate-300 flex items-center gap-1.5 font-medium">
+                              <Users size={12} className={isFull ? "text-emerald-400 shrink-0" : isEmpty ? "text-rose-400 shrink-0" : "text-cyan-400 shrink-0"}/> 
+                              <span className="truncate">{item.pj}</span>
+                            </div>
+
+                            <div>
+                              <span className="inline-block px-2 py-0.5 bg-slate-950 border border-slate-800 text-slate-400 text-[10px] font-semibold rounded-lg uppercase tracking-wider">
+                                {item.method}
+                              </span>
+                            </div>
+
+                            {totalQty > 1 && (
+                              <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                                <div className={`inline-flex items-center justify-between rounded-xl border px-2 py-1 ${
+                                  isFull ? 'bg-emerald-950/40 border-emerald-800/80' : isEmpty ? 'bg-rose-950/40 border-rose-800/80' : 'bg-cyan-950/40 border-cyan-800/80'
+                                }`}>
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={async () => {
+                                        if (editingGroupId) return;
+                                        if (checkedCount <= 0) return;
+                                        const updatedIndices = Array.from({ length: checkedCount - 1 }, (_, i) => i);
+                                        const newStatus = updatedIndices.length >= totalQty ? 'ready' : 'pending';
+                                        const updated = groupGear.map(g => 
+                                          g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
+                                        );
+                                        await updateGroupGearToFirebase(updated);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                                    >
+                                      <Minus size={12}/>
+                                    </button>
+                                    
+                                    <span className={`text-xs font-bold font-mono px-1 ${
+                                      isFull ? 'text-emerald-400' : isEmpty ? 'text-rose-400' : 'text-cyan-400'
+                                    }`}>
+                                      {checkedCount} dari {totalQty} ada
+                                    </span>
+
+                                    <button 
+                                      type="button"
+                                      onClick={async () => {
+                                        if (editingGroupId) return;
+                                        if (checkedCount >= totalQty) return;
+                                        const updatedIndices = Array.from({ length: checkedCount + 1 }, (_, i) => i);
+                                        const newStatus = updatedIndices.length >= totalQty ? 'ready' : 'pending';
+                                        const updated = groupGear.map(g => 
+                                          g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
+                                        );
+                                        await updateGroupGearToFirebase(updated);
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                                    >
+                                      <Plus size={12}/>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+
+                        <div className="flex items-center gap-1 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={(e) => { e.stopPropagation(); setEditGroupForm(item); setEditingGroupId(item.id); }} className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/40 rounded-xl cursor-pointer transition-colors"><Edit3 size={15} /></button>
+                          <button onClick={(e) => hapusGroupGear(e, item.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl cursor-pointer transition-colors"><X size={15} /></button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    })}
+    {/* ... (lanjutan tombol tambah logistik tim di bawahnya) ... */}
 
           {/* Form Tambah Logistik Tim */}
           {editingGroupId === 'new' ? (

@@ -38,8 +38,8 @@ export default function GearLogistics({
         
         // 1. Logistik Tim (Sama untuk semua anggota tim)
         setGroupGear(data.groupGear || [
-          { id: 1, name: 'Tenda Kapasitas 4', qty: 1, pj: 'Tim (Bawaan Bersama)', method: 'Sewa', status: 'ready' },
-          { id: 2, name: 'Nesting + Kompor', qty: 1, pj: currentUser.displayName || 'Leader', method: 'Punya Pribadi', status: 'pending' },
+          { id: 1, name: 'Tenda Kapasitas 4', qty: 1, pj: 'Tim (Bawaan Bersama)', method: 'Sewa', status: 'ready', checkedIndices: [] },
+          { id: 2, name: 'Nesting + Kompor', qty: 1, pj: currentUser.displayName || 'Leader', method: 'Punya Pribadi', status: 'pending', checkedIndices: [] },
         ]);
         
         // 2. Eco-Waste (Sama untuk semua anggota tim)
@@ -50,8 +50,8 @@ export default function GearLogistics({
         // 3. Personal Gear (Dipisah per User berdasarkan UID masing-masing)
         const personalMap = data.personalGearMap || {};
         const userGear = personalMap[currentUser?.uid] || [
-          { id: 1, name: 'Carrier 45L+', qty: 1, checked: true },
-          { id: 2, name: 'Sleeping Bag', qty: 1, checked: false },
+          { id: 1, name: 'Carrier 45L+', qty: 1, checkedIndices: [], checked: true },
+          { id: 2, name: 'Sleeping Bag', qty: 1, checkedIndices: [], checked: false },
         ];
         setPersonalGear(userGear);
       }
@@ -103,18 +103,10 @@ export default function GearLogistics({
 
 
   // ================= HANDLERS: LOGISTIK TIM =================
-  const toggleGroupStatus = async (id) => {
-    if (editingGroupId) return;
-    const updated = groupGear.map(item => 
-      item.id === id ? { ...item, status: item.status === 'ready' ? 'pending' : 'ready' } : item
-    );
-    await updateGroupGearToFirebase(updated);
-  };
-
   const handleEditGroupSave = async () => {
     let updated;
     if (editingGroupId === 'new') {
-      updated = [...groupGear, { ...editGroupForm, id: Date.now(), status: 'pending' }];
+      updated = [...groupGear, { ...editGroupForm, id: Date.now(), status: 'pending', checkedIndices: [] }];
     } else {
       updated = groupGear.map(g => g.id === editingGroupId ? editGroupForm : g);
     }
@@ -129,14 +121,7 @@ export default function GearLogistics({
   };
 
 
-  // ================= HANDLERS: PERSONAL GEAR (MURNI MILIK USER TERSEBUT) =================
-  const togglePersonalStatus = async (id) => {
-    if (editingPersonalId) return;
-    const updated = personalGear.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
-    setPersonalGear(updated);
-    await updatePersonalGearToFirebase(updated);
-  };
-
+  // ================= HANDLERS: PERSONAL GEAR =================
   const hapusPersonalItem = async (e, id) => {
     e.stopPropagation();
     const updated = personalGear.filter(item => item.id !== id);
@@ -147,7 +132,7 @@ export default function GearLogistics({
   const tambahPersonalItem = async (e) => {
     e.preventDefault();
     if (!newPersonalItem.trim()) return;
-    const updated = [...personalGear, { id: Date.now(), name: newPersonalItem, qty: newPersonalQty, checked: false }];
+    const updated = [...personalGear, { id: Date.now(), name: newPersonalItem, qty: newPersonalQty, checkedIndices: [], checked: false }];
     setPersonalGear(updated);
     await updatePersonalGearToFirebase(updated);
     setNewPersonalItem('');
@@ -162,7 +147,7 @@ export default function GearLogistics({
   };
 
   const importFromTemplate = async (templateItems) => {
-    const newItems = templateItems.map((name, idx) => ({ id: Date.now() + idx, name: name, qty: 1, checked: false }));
+    const newItems = templateItems.map((name, idx) => ({ id: Date.now() + idx, name: name, qty: 1, checkedIndices: [], checked: false }));
     const updated = [...personalGear, ...newItems];
     setPersonalGear(updated);
     await updatePersonalGearToFirebase(updated);
@@ -258,64 +243,194 @@ export default function GearLogistics({
         </button>
       </div>
 
-      {/* ================= TAB 1: GROUP ================= */}
+{/* ================= TAB 1: GROUP ================= */}
       {activeTab === 'group' && (
-        <div className="space-y-3 animate-in fade-in duration-200">
-          {groupGear.map(item => (
-            <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${item.status === 'ready' && editingGroupId !== item.id ? 'bg-emerald-950/20 border-emerald-500/30 text-slate-300' : 'bg-slate-900/90 border-slate-800/90 text-white hover:border-emerald-500/40'}`}>
-              {editingGroupId === item.id ? (
-                <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang..." className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" />
-                    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
-                      <span className="text-[10px] font-bold text-slate-400">QTY:</span>
-                      <input type="number" min="1" value={editGroupForm.qty} onChange={(e) => setEditGroupForm({...editGroupForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <select value={editGroupForm.pj} onChange={(e) => setEditGroupForm({...editGroupForm, pj: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
-                      <option value="Tim (Bawaan Bersama)">Tim (Bawaan Bersama)</option>
-                      {tripMembers.map((member, mIdx) => {
-                        const mName = typeof member === 'string' ? member : (member.displayName || member.name || member.username || 'Anggota');
-                        const mUid = member.uid || mIdx;
-                        return <option key={mUid} value={mName}>{mName}</option>;
-                      })}
-                    </select>
-                    <select value={editGroupForm.method} onChange={(e) => setEditGroupForm({...editGroupForm, method: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
-                      <option value="Punya Pribadi">Punya Pribadi</option>
-                      <option value="Sewa">Sewa</option>
-                      <option value="Beli Patungan">Beli Patungan</option>
-                    </select>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-1">
-                    <button onClick={() => setEditingGroupId(null)} className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Batal</button>
-                    <button onClick={handleEditGroupSave} className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-500 cursor-pointer shadow-md"><Save size={14}/> Simpan</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleGroupStatus(item.id)}>
-                  <div className="flex items-center gap-3.5">
-                    {item.status === 'ready' ? <CheckCircle2 size={20} className="text-emerald-400 shrink-0" /> : <Circle size={20} className="text-slate-600 shrink-0 hover:text-slate-400" />}
-                    <div>
-                      <p className={`text-xs sm:text-sm font-bold ${item.status === 'ready' ? 'text-slate-300' : 'text-white'}`}>
-                        <span className="text-emerald-400 font-bold mr-2 px-2 py-0.5 bg-emerald-950/80 rounded-lg border border-emerald-900 font-mono">{item.qty}x</span>{item.name}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
-                        <Users size={11} className="text-emerald-400 shrink-0"/> <span className="text-slate-300 font-medium">{item.pj}</span> • {item.method}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); setEditGroupForm(item); setEditingGroupId(item.id); }} className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/40 rounded-xl cursor-pointer transition-colors"><Edit3 size={15} /></button>
-                    <button onClick={(e) => hapusGroupGear(e, item.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl cursor-pointer transition-colors"><X size={15} /></button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {['Punya Pribadi', 'Sewa', 'Beli Patungan'].map(methodCategory => {
+            const itemsInGroup = [...groupGear]
+              .filter(item => (item.method || 'Punya Pribadi') === methodCategory)
+              .sort((a, b) => (b.qty || 1) - (a.qty || 1));
 
+            if (itemsInGroup.length === 0) return null;
+
+            return (
+              <div key={methodCategory} className="space-y-3">
+                {/* Header Kategori */}
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-900/80 px-3 py-1 rounded-xl shadow-sm">
+                    📦 {methodCategory}
+                  </span>
+                  <div className="flex-1 h-[1px] bg-slate-800"></div>
+                </div>
+
+                {/* List Item dalam Kategori */}
+                {itemsInGroup.map(item => {
+                  const checkedCount = item.checkedIndices?.length || 0;
+                  const totalQty = item.qty || 1;
+                  const isFull = checkedCount >= totalQty;
+                  const isEmpty = checkedCount === 0;
+
+                  let cardColorClass = "bg-slate-900/90 border-slate-800/90 text-white hover:border-emerald-500/40";
+                  if (totalQty > 1) {
+                    if (isEmpty) {
+                      cardColorClass = "bg-rose-950/20 border-rose-500/40 text-slate-300";
+                    } else if (isFull) {
+                      cardColorClass = "bg-emerald-950/20 border-emerald-500/30 text-slate-300";
+                    } else {
+                      cardColorClass = "bg-cyan-950/20 border-cyan-500/30 text-slate-300";
+                    }
+                  } else {
+                    cardColorClass = isFull 
+                      ? "bg-emerald-950/20 border-emerald-500/30 text-slate-300" 
+                      : "bg-rose-950/20 border-rose-500/40 text-white hover:border-rose-500/60";
+                  }
+
+                  return (
+                    <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${cardColorClass}`}>
+                      {editingGroupId === item.id ? (
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang..." className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" />
+                            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
+                              <span className="text-[10px] font-bold text-slate-400">QTY:</span>
+                              <input type="number" min="1" value={editGroupForm.qty} onChange={(e) => setEditGroupForm({...editGroupForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <select value={editGroupForm.pj} onChange={(e) => setEditGroupForm({...editGroupForm, pj: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+                              <option value="Tim (Bawaan Bersama)">Tim (Bawaan Bersama)</option>
+                              {tripMembers.map((member, mIdx) => {
+                                const mName = typeof member === 'string' ? member : (member.displayName || member.name || member.username || 'Anggota');
+                                const mUid = member.uid || mIdx;
+                                return <option key={mUid} value={mName}>{mName}</option>;
+                              })}
+                            </select>
+                            <select value={editGroupForm.method} onChange={(e) => setEditGroupForm({...editGroupForm, method: e.target.value})} className="bg-slate-950 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2.5 outline-none cursor-pointer">
+                              <option value="Punya Pribadi">Punya Pribadi</option>
+                              <option value="Sewa">Sewa</option>
+                              <option value="Beli Patungan">Beli Patungan</option>
+                            </select>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button onClick={() => setEditingGroupId(null)} className="px-3.5 py-1.5 text-xs text-slate-400 hover:text-white cursor-pointer">Batal</button>
+                            <button onClick={handleEditGroupSave} className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-500 cursor-pointer shadow-md"><Save size={14}/> Simpan</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between cursor-pointer gap-3" onClick={async (e) => {
+                          e.stopPropagation();
+                          if (editingGroupId || totalQty > 1) return;
+                          const isChecked = checkedCount > 0;
+                          const updatedIndices = isChecked ? [] : [0];
+                          const newStatus = updatedIndices.length > 0 ? 'ready' : 'pending';
+                          const updated = groupGear.map(g => 
+                            g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
+                          );
+                          await updateGroupGearToFirebase(updated);
+                        }}>
+                          
+                          <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                            {totalQty <= 1 ? (
+                              <div className="shrink-0 pt-0.5">
+                                {isFull ? (
+                                  <CheckCircle2 size={20} className="text-emerald-400" />
+                                ) : (
+                                  <Circle size={20} className="text-rose-500 animate-pulse" />
+                                )}
+                              </div>
+                            ) : null}
+
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className={`text-xs sm:text-sm font-bold leading-snug ${isFull ? 'text-slate-400 line-through' : 'text-white'}`}>
+                                  {item.name}
+                                </p>
+                                <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                                  isFull ? 'bg-emerald-950/80 text-emerald-400 border-emerald-900' : isEmpty ? 'bg-rose-950/80 text-rose-400 border-rose-900' : 'bg-cyan-950/80 text-cyan-400 border-cyan-900'
+                                }`}>
+                                  {totalQty}x
+                                </span>
+                              </div>
+
+                              <div className="text-[11px] text-slate-300 flex items-center gap-1.5 font-medium">
+                                <Users size={12} className={isFull ? "text-emerald-400 shrink-0" : isEmpty ? "text-rose-400 shrink-0" : "text-cyan-400 shrink-0"}/> 
+                                <span className="truncate">{item.pj}</span>
+                              </div>
+
+                              <div>
+                                <span className="inline-block px-2 py-0.5 bg-slate-950 border border-slate-800 text-slate-400 text-[10px] font-semibold rounded-lg uppercase tracking-wider">
+                                  {item.method}
+                                </span>
+                              </div>
+
+                              {totalQty > 1 && (
+                                <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                                  <div className={`inline-flex items-center justify-between rounded-xl border px-2 py-1 ${
+                                    isFull ? 'bg-emerald-950/40 border-emerald-800/80' : isEmpty ? 'bg-rose-950/40 border-rose-800/80' : 'bg-cyan-950/40 border-cyan-800/80'
+                                  }`}>
+                                    <div className="flex items-center gap-2">
+                                      <button 
+                                        type="button"
+                                        onClick={async () => {
+                                          if (editingGroupId) return;
+                                          if (checkedCount <= 0) return;
+                                          const updatedIndices = Array.from({ length: checkedCount - 1 }, (_, i) => i);
+                                          const newStatus = updatedIndices.length >= totalQty ? 'ready' : 'pending';
+                                          const updated = groupGear.map(g => 
+                                            g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
+                                          );
+                                          await updateGroupGearToFirebase(updated);
+                                        }}
+                                        className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                                      >
+                                        <Minus size={12}/>
+                                      </button>
+                                      
+                                      <span className={`text-xs font-bold font-mono px-1 ${
+                                        isFull ? 'text-emerald-400' : isEmpty ? 'text-rose-400' : 'text-cyan-400'
+                                      }`}>
+                                        {checkedCount} dari {totalQty} ada
+                                      </span>
+
+                                      <button 
+                                        type="button"
+                                        onClick={async () => {
+                                          if (editingGroupId) return;
+                                          if (checkedCount >= totalQty) return;
+                                          const updatedIndices = Array.from({ length: checkedCount + 1 }, (_, i) => i);
+                                          const newStatus = updatedIndices.length >= totalQty ? 'ready' : 'pending';
+                                          const updated = groupGear.map(g => 
+                                            g.id === item.id ? { ...g, checkedIndices: updatedIndices, status: newStatus } : g
+                                          );
+                                          await updateGroupGearToFirebase(updated);
+                                        }}
+                                        className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                                      >
+                                        <Plus size={12}/>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={(e) => { e.stopPropagation(); setEditGroupForm(item); setEditingGroupId(item.id); }} className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950/40 rounded-xl cursor-pointer transition-colors"><Edit3 size={15} /></button>
+                            <button onClick={(e) => hapusGroupGear(e, item.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl cursor-pointer transition-colors"><X size={15} /></button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          {/* Form Tambah Logistik Tim */}
           {editingGroupId === 'new' ? (
-            <div className="p-4 bg-slate-900/90 border border-emerald-500/50 rounded-2xl space-y-3">
+            <div className="p-4 bg-slate-900/90 border border-emerald-500/50 rounded-2xl space-y-3 mt-4">
               <div className="flex gap-2">
                 <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang Baru" className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" autoFocus />
                 <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
@@ -344,7 +459,7 @@ export default function GearLogistics({
               </div>
             </div>
           ) : (
-            <button onClick={() => { setEditGroupForm({ name: '', qty: 1, pj: 'Tim (Bawaan Bersama)', method: 'Punya Pribadi' }); setEditingGroupId('new'); }} className="w-full py-3.5 border border-dashed border-slate-700 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer bg-slate-900/40">
+            <button onClick={() => { setEditGroupForm({ name: '', qty: 1, pj: 'Tim (Bawaan Bersama)', method: 'Punya Pribadi' }); setEditingGroupId('new'); }} className="w-full py-3.5 border border-dashed border-slate-700 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/50 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer bg-slate-900/40 mt-4">
               <Plus size={15} /> Tambah Logistik Tim
             </button>
           )}
@@ -357,7 +472,7 @@ export default function GearLogistics({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-cyan-950/20 border border-cyan-500/30 rounded-2xl gap-3">
             <div>
               <p className="text-cyan-400 text-xs font-bold mb-0.5 flex items-center gap-1.5"><Sparkles size={13}/> Checklist Milik {currentUser?.displayName}</p>
-              <p className="text-slate-400 text-[11px]">List ini khusus dan berbeda untuk tiap anggota. Tersimpan aman di cloud.</p>
+              <p className="text-slate-400 text-[11px]">List ini khusus dan berbeda untuk tiap anggota.</p>
             </div>
             <button onClick={() => {setShowTemplateModal(!showTemplateModal); setIsManageMode(false);}} className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md">
               <Download size={14} /> {showTemplateModal ? 'Tutup Template' : 'Import Template'}
@@ -430,39 +545,147 @@ export default function GearLogistics({
             </div>
           )}
 
-          {personalGear.map(item => (
-            <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${item.checked && editingPersonalId !== item.id ? 'bg-cyan-950/20 border-cyan-500/30 text-slate-400' : 'bg-slate-900/90 border-slate-800/90 text-white hover:border-cyan-500/40'}`}>
-              {editingPersonalId === item.id ? (
-                <div className="flex w-full flex-col sm:flex-row items-center gap-2">
-                  <input type="text" value={editPersonalForm.name} onChange={(e) => setEditPersonalForm({...editPersonalForm, name: e.target.value})} className="flex-1 w-full bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-cyan-500" />
-                  <div className="flex items-center justify-between w-full sm:w-auto gap-2">
-                    <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
-                      <span className="text-[10px] font-bold text-slate-400">QTY:</span>
-                      <input type="number" min="1" value={editPersonalForm.qty} onChange={(e) => setEditPersonalForm({...editPersonalForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
+{[...personalGear].sort((a, b) => (b.qty || 1) - (a.qty || 1)).map(item => {
+            const checkedCount = item.checkedIndices?.length || 0;
+            const totalQty = item.qty || 1;
+            const isFull = checkedCount >= totalQty;
+            const isEmpty = checkedCount === 0;
+
+            let cardColorClass = "bg-slate-900/90 border-slate-800/90 text-white hover:border-cyan-500/40";
+            if (totalQty > 1) {
+              if (isEmpty) {
+                cardColorClass = "bg-rose-950/20 border-rose-500/40 text-slate-300";
+              } else if (isFull) {
+                cardColorClass = "bg-cyan-950/20 border-cyan-500/30 text-slate-300";
+              } else {
+                cardColorClass = "bg-emerald-950/20 border-emerald-500/30 text-slate-300";
+              }
+            } else {
+              cardColorClass = isFull 
+                ? "bg-cyan-950/20 border-cyan-500/30 text-slate-300" 
+                : "bg-rose-950/20 border-rose-500/40 text-white hover:border-rose-500/60";
+            }
+
+            return (
+              <div key={item.id} className={`p-4 rounded-2xl backdrop-blur-xl border transition-all shadow-md ${cardColorClass}`}>
+                {editingPersonalId === item.id ? (
+                  <div className="flex w-full flex-col sm:flex-row items-center gap-2">
+                    <input type="text" value={editPersonalForm.name} onChange={(e) => setEditPersonalForm({...editPersonalForm, name: e.target.value})} className="flex-1 w-full bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-cyan-500" />
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+                      <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
+                        <span className="text-[10px] font-bold text-slate-400">QTY:</span>
+                        <input type="number" min="1" value={editPersonalForm.qty} onChange={(e) => setEditPersonalForm({...editPersonalForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditingPersonalId(null)} className="px-3 py-2 text-xs text-slate-400 hover:text-white cursor-pointer">Batal</button>
+                        <button onClick={handleEditPersonalSave} className="p-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-500 cursor-pointer shadow-md"><Save size={15}/></button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditingPersonalId(null)} className="px-3 py-2 text-xs text-slate-400 hover:text-white cursor-pointer">Batal</button>
-                      <button onClick={handleEditPersonalSave} className="p-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-500 cursor-pointer shadow-md"><Save size={15}/></button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between cursor-pointer gap-3" onClick={async (e) => {
+                    e.stopPropagation();
+                    if (editingPersonalId || totalQty > 1) return;
+                    const isChecked = checkedCount > 0;
+                    const updatedIndices = isChecked ? [] : [0];
+                    const updated = personalGear.map(p => 
+                      p.id === item.id ? { ...p, checkedIndices: updatedIndices, checked: updatedIndices.length > 0 } : p
+                    );
+                    setPersonalGear(updated);
+                    await updatePersonalGearToFirebase(updated);
+                  }}>
+                    
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                      
+                      {/* Checkbox jika Qty = 1 */}
+                      {totalQty <= 1 ? (
+                        <div className="shrink-0">
+                          {isFull ? (
+                            <CheckCircle2 size={20} className="text-cyan-400" />
+                          ) : (
+                            <Circle size={20} className="text-rose-500 animate-pulse" />
+                          )}
+                        </div>
+                      ) : null}
+
+                      {/* Nama Barang & Kontrol - + */}
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`text-xs sm:text-sm font-bold leading-snug ${isFull ? 'text-slate-400 line-through' : 'text-white'}`}>
+                             {item.name}
+                          </p>
+                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                            isFull ? 'bg-cyan-950/80 text-cyan-400 border-cyan-900' : isEmpty ? 'bg-rose-950/80 text-rose-400 border-rose-900' : 'bg-emerald-950/80 text-emerald-400 border-emerald-900'
+                          }`}>
+                            {totalQty}x
+                          </span>
+                        </div>
+
+                        {/* Kontrol - / + khusus jika Qty > 1 */}
+                        {totalQty > 1 && (
+                          <div className="flex items-center gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                            <div className={`inline-flex items-center justify-between rounded-xl border px-2 py-1 ${
+                              isFull ? 'bg-cyan-950/40 border-cyan-800/80' : isEmpty ? 'bg-rose-950/40 border-rose-800/80' : 'bg-emerald-950/40 border-emerald-800/80'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  type="button"
+                                  onClick={async () => {
+                                    if (editingPersonalId) return;
+                                    if (checkedCount <= 0) return;
+                                    const updatedIndices = Array.from({ length: checkedCount - 1 }, (_, i) => i);
+                                    const updated = personalGear.map(p => 
+                                      p.id === item.id ? { ...p, checkedIndices: updatedIndices, checked: updatedIndices.length >= p.qty } : p
+                                    );
+                                    setPersonalGear(updated);
+                                    await updatePersonalGearToFirebase(updated);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                                >
+                                  <Minus size={12}/>
+                                </button>
+                                
+                                <span className={`text-xs font-bold font-mono px-1 ${
+                                  isFull ? 'text-cyan-400' : isEmpty ? 'text-rose-400' : 'text-emerald-400'
+                                }`}>
+                                  {checkedCount} dari {totalQty} ada
+                                </span>
+
+                                <button 
+                                  type="button"
+                                  onClick={async () => {
+                                    if (editingPersonalId) return;
+                                    if (checkedCount >= totalQty) return;
+                                    const updatedIndices = Array.from({ length: checkedCount + 1 }, (_, i) => i);
+                                    const updated = personalGear.map(p => 
+                                      p.id === item.id ? { ...p, checkedIndices: updatedIndices, checked: updatedIndices.length >= p.qty } : p
+                                    );
+                                    setPersonalGear(updated);
+                                    await updatePersonalGearToFirebase(updated);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-white cursor-pointer"
+                                >
+                                  <Plus size={12}/>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
+
+                    {/* Tombol Edit & Hapus di Kanan */}
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); setEditPersonalForm(item); setEditingPersonalId(item.id); }} className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-950/40 rounded-xl cursor-pointer transition-colors"><Edit3 size={15} /></button>
+                      <button onClick={(e) => hapusPersonalItem(e, item.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl cursor-pointer transition-colors"><X size={15} /></button>
+                    </div>
+
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => togglePersonalStatus(item.id)}>
-                  <div className="flex items-center gap-3.5 flex-1">
-                    {item.checked ? <CheckCircle2 size={20} className="text-cyan-400 shrink-0" /> : <Circle size={20} className="text-slate-600 shrink-0 hover:text-slate-400" />}
-                    <span className={`text-xs sm:text-sm font-medium transition-colors ${item.checked ? 'text-slate-500 line-through' : 'text-white'}`}>
-                       <span className="text-cyan-400 font-bold mr-2 px-2 py-0.5 bg-cyan-950/80 rounded-lg border border-cyan-900 font-mono">{item.qty}x</span>
-                       {item.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); setEditPersonalForm(item); setEditingPersonalId(item.id); }} className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-950/40 rounded-xl cursor-pointer transition-colors"><Edit3 size={15} /></button>
-                    <button onClick={(e) => hapusPersonalItem(e, item.id)} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl cursor-pointer transition-colors"><X size={15} /></button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
 
           <form onSubmit={tambahPersonalItem} className="flex gap-2">
             <input type="text" value={newPersonalItem} onChange={(e) => setNewPersonalItem(e.target.value)} placeholder="Tambah barang ke list lo..." className="flex-1 bg-slate-900/90 border border-slate-800 text-white text-xs rounded-2xl px-4 py-3 outline-none focus:border-cyan-500" />

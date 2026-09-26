@@ -1172,7 +1172,7 @@ export default function TripManager({ currentUser }) {
                                 onChange={(e) => setSelectedInviteUserUid(e.target.value)}
                                 className="px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-white cursor-pointer outline-none focus:border-emerald-500"
                               >
-                                <option value="">Daftar</option>
+                                <option value="">Daftar User</option>
                                 {availableUsersToInvite.map(u => (
                                   <option key={u.uid} value={u.uid}>{u.displayName} (@{u.username})</option>
                                 ))}

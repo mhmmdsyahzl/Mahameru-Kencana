@@ -5,7 +5,16 @@ import {
   Mountain, Calendar, MapPin, Plus, Trash2, Edit3, Compass,  
   UserPlus, Check, X, Map, Info, Shield, ShieldAlert,  
   Package, Wallet, Clock, Users, ChevronDown, ChevronUp,
-  Award, Archive, CheckCircle2, HeartPulse, BellRing
+  Award, Archive, CheckCircle2, HeartPulse, BellRing,
+  BookAIcon,
+  BookCheck,
+  BookDown,
+  BookText,
+  TrendingUpIcon,
+  MountainSnow,
+  MonitorUp,
+  LucideMountain,
+  MousePointer
 } from 'lucide-react';
 import GearLogistics from './GearLogistics';
 import TripFinance from './TripFinance';
@@ -649,7 +658,7 @@ export default function TripManager({ currentUser }) {
         <div className="space-y-1.5 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold">
-              <Compass size={13} className="animate-spin" /> Outdoor Workspace
+              <Compass size={13} className="animate-spin" /> Mahameru Kencana Workspace
             </div>
             
             {/* Indikator Status Sinyal PWA Offline/Online */}
@@ -657,7 +666,7 @@ export default function TripManager({ currentUser }) {
               isOnline ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
             }`}>
               <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
-              {isOnline ? 'Online (Synced)' : 'Mode Offline'}
+              {isOnline ? 'Online' : 'Offline'}
             </div>
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight !m-0">Trip Hub & Workspace</h2>
@@ -690,38 +699,45 @@ export default function TripManager({ currentUser }) {
           </div>
 
           {/* Baris Bawah Kanan: Tab Menu Navigasi (Multi-Color Responsive) */}
-          <div className="grid grid-cols-3 gap-1 bg-slate-950/90 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner w-full lg:w-auto">
-            <button 
-              onClick={() => setMainViewTab('hub')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-center truncate ${
-                mainViewTab === 'hub' 
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Trip Hub
-            </button>
-            <button 
-              onClick={() => setMainViewTab('p3k')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 truncate ${
-                mainViewTab === 'p3k' 
-                  ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30' 
-                  : 'text-slate-400 hover:text-cyan-400'
-              }`}
-            >
-              <HeartPulse size={13} className="shrink-0"/><span className="truncate">P3K Guide</span>
-            </button>
-            <button 
-              onClick={() => setMainViewTab('logbookArchive')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 truncate ${
-                mainViewTab === 'logbookArchive' 
-                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30' 
-                  : 'text-slate-400 hover:text-amber-400'
-              }`}
-            >
-              <Award size={13} className="shrink-0"/><span className="truncate">Arsip</span>
-            </button>
-          </div>
+   <div className="grid grid-cols-3 gap-1 bg-slate-950/90 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner w-full lg:w-auto">
+  
+  <button 
+    onClick={() => setMainViewTab('hub')}
+    className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
+      mainViewTab === 'hub' 
+        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' 
+        : 'text-slate-400 hover:text-white'
+    }`}
+  >
+    <Mountain size={14} className="shrink-0" />
+    <span className="truncate">Trip Hub</span>
+  </button>
+
+  <button 
+    onClick={() => setMainViewTab('p3k')}
+    className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
+      mainViewTab === 'p3k' 
+        ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30' 
+        : 'text-slate-400 hover:text-cyan-400'
+    }`}
+  >
+    <HeartPulse size={14} className="shrink-0" />
+    <span className="truncate">P3K Guide</span>
+  </button>
+
+  <button 
+    onClick={() => setMainViewTab('logbookArchive')}
+    className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate ${
+      mainViewTab === 'logbookArchive' 
+        ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30' 
+        : 'text-slate-400 hover:text-amber-400'
+    }`}
+  >
+    <Award size={14} className="shrink-0" />
+    <span className="truncate">Arsip</span>
+  </button>
+
+</div>
 
         </div>
       </div>
@@ -844,20 +860,20 @@ export default function TripManager({ currentUser }) {
             <form onSubmit={handleSubmitTrip} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Judul Trip</label>
-                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh: Pendakian Santai Akhir Pekan" className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500" />
+                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Contoh : MT.MERBABU 3145 MDPL" className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Kota Keberangkatan</label>
-                  <input type="text" required value={departureCity} onChange={(e) => setDepartureCity(e.target.value)} placeholder="Pekanbaru" className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500" />
+                  <input type="text" required value={departureCity} onChange={(e) => setDepartureCity(e.target.value)} placeholder="Kota Asal" className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Jenis Aktivitas</label>
                   <select value={activityType} onChange={(e) => { setActivityType(e.target.value); setDestinations([]); }} className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500 cursor-pointer">
                     <option value="climbing">🏔️ Pendakian Gunung</option>
-                    <option value="riding">🏍️ Riding / Touring (Non-Gunung)</option>
-                    <option value="both">⚡ Keduanya (Gunung & Non-Gunung)</option>
+                    <option value="riding">🏍️ Riding / Touring</option>
+                    <option value="both">⚡ Gunung & Riding / Touring</option>
                   </select>
                 </div>
               </div>
@@ -868,7 +884,7 @@ export default function TripManager({ currentUser }) {
                 {activityType !== 'riding' && (
                   <div className="flex gap-2">
                     <select value={destinationSelectInput} onChange={(e) => setDestinationSelectInput(e.target.value)} className="flex-1 px-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500 cursor-pointer">
-                      <option value="">-- Pilih Gunung dari Database --</option>
+                      <option value="">Pilih Gunung</option>
                       {mountainDatabase.map((item, idx) => (
                         <option key={idx} value={item.name}>
                           {item.name} (Grade {item.grade})
@@ -885,10 +901,10 @@ export default function TripManager({ currentUser }) {
                       type="text" 
                       value={customDestinationInput} 
                       onChange={(e) => setCustomDestinationInput(e.target.value)} 
-                      placeholder="Ketik nama destinasi bebas / non-gunung..." 
+                      placeholder="Ketik Nama Destinasi" 
                       className="flex-1 px-4 py-2.5 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500" 
                     />
-                    <button type="button" onClick={() => { if (customDestinationInput.trim() && !destinations.includes(customDestinationInput.trim())) { setDestinations([...destinations, customDestinationInput.trim()]); setCustomDestinationInput(''); }}} className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-2xl cursor-pointer">+ Custom</button>
+                    <button type="button" onClick={() => { if (customDestinationInput.trim() && !destinations.includes(customDestinationInput.trim())) { setDestinations([...destinations, customDestinationInput.trim()]); setCustomDestinationInput(''); }}} className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-2xl cursor-pointer">+ Tambah</button>
                   </div>
                 )}
 
@@ -905,7 +921,7 @@ export default function TripManager({ currentUser }) {
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tipe Trip</label>
                   <select value={tripType} onChange={(e) => setTripType(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500 cursor-pointer">
-                    <option value="Solo">👤 Solo Trip</option>
+                    <option value="Solo">👤 Solo Expedition</option>
                     <option value="Group">👥 Group Expedition</option>
                   </select>
                 </div>
@@ -923,12 +939,12 @@ export default function TripManager({ currentUser }) {
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mode Jadwal</label>
                   <select value={dateMode} onChange={(e) => setDateMode(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500 cursor-pointer">
-                    <option value="fixed">📅 Tanggal Pasti (Fixed)</option>
-                    <option value="month">🗓️ Estimasi Bulan Saja</option>
+                    <option value="fixed">📅 Tanggal Pasti</option>
+                    <option value="month">🗓️ Estimasi Bulan</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Estimasi Biaya / Kas (Rp)</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Biaya / Kas (Rp)</label>
                   <input type="text" value={fuelEstimate} onChange={(e) => setFuelEstimate(e.target.value)} placeholder="Contoh: 150000" className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-emerald-500 font-mono" />
                 </div>
               </div>
@@ -1086,7 +1102,7 @@ export default function TripManager({ currentUser }) {
                           <p className="font-bold text-white text-sm leading-relaxed break-words">
                             {trip.departureCity} ➔ {trip.destinations?.join(' ➔ ')}
                           </p>
-                          <p className="pt-2"><span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Estimasi Kas / Biaya:</span> <span className="font-mono font-bold text-amber-400">Rp {Number(trip.targetKas || trip.fuelEstimate || 0).toLocaleString('id-ID')}</span></p>
+                          <p className="pt-2"><span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Estim Kas / Biaya:</span> <span className="font-mono font-bold text-amber-400">Rp {Number(trip.targetKas || trip.fuelEstimate || 0).toLocaleString('id-ID')}</span></p>
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-900">

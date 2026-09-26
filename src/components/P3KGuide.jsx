@@ -14,7 +14,6 @@ export default function P3KGuide() {
     { id: 1, name: 'SAR / BASARNAS Nasional', phone: '115', desc: 'Layanan Siaga Darurat 24 Jam' },
     { id: 2, name: 'Emergency Call Darurat Umum', phone: '112', desc: 'Layanan Darurat Terpadu' },
     { id: 3, name: 'Ambulans / Darurat Medis', phone: '118', desc: 'Evakuasi & Pertolongan Medis' },
-    { id: 4, name: 'Posko / Basecamp Gunung (Opsi)', phone: '08123456789', desc: 'Simpan nomor pengelola jalur lokal' }
   ]);
   
   const [showAddContactModal, setShowAddContactModal] = useState(false);
@@ -26,7 +25,7 @@ export default function P3KGuide() {
   const medicalGuides = [
     {
       id: 'med-5',
-      title: 'Luka Bakar (Knalpot Motor / Kompor Lapangan)',
+      title: 'Luka Bakar (Knalpot Motor / Kompor)',
       severity: 'Ringan / Sedang',
       badgeColor: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.2)]',
       borderGlow: 'hover:border-cyan-500/50',
@@ -134,7 +133,7 @@ export default function P3KGuide() {
     },
     {
       id: 'em-1',
-      title: 'Prinsip Utama Survival: S.T.O.P (Wajib Diingat)',
+      title: 'Prinsip Utama Survival: S.T.O.P',
       severity: 'Protokol Wajib / Safety First',
       badgeColor: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.2)]',
       borderGlow: 'hover:border-cyan-500/50',
@@ -206,7 +205,7 @@ export default function P3KGuide() {
             <HeartPulse size={13} /> SAR & Medical Field Guide
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight !m-0">P3K & Protokol Darurat</h2>
-          <p className="text-xs sm:text-sm text-slate-400">Panduan lengkap penanganan medis alam bebas & jalan raya untuk petualang sejati.</p>
+          <p className="text-xs sm:text-sm text-slate-400">Panduan lengkap penanganan medis alam bebas & jalan raya.</p>
         </div>
 
         {/* Tab Navigasi Responsif */}
@@ -242,7 +241,7 @@ export default function P3KGuide() {
       {activeTab === 'medical' && (
         <div className="space-y-3">
           <div className="px-1">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Urutan Penanganan (Dari Ringan hingga Bahaya Kritis):</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Penanganan Ringan hingga Bahaya Kritis:</p>
           </div>
           {medicalGuides.map((item) => {
             const isExpanded = expandedId === item.id;
@@ -339,7 +338,7 @@ export default function P3KGuide() {
         </div>
       )}
 
-      {/* KONTEN TAB 3: KONTAK DARURAT & SAR (Langsung Telpon Seluler) */}
+      {/* KONTEN TAB 3: KONTAK DARURAT & SAR (Tombol Panggil Dihapus) */}
       {activeTab === 'contacts' && (
         <div className="space-y-4">
           
@@ -377,24 +376,15 @@ export default function P3KGuide() {
                     {contact.phone}
                   </div>
                   
-                  <div className="flex items-center gap-1.5">
-                    {/* Tautan tel: agar langsung membuka aplikasi telepon seluler */}
-                    <a 
-                      href={`tel:${contact.phone.replace(/[^0-9+]/g, '')}`} 
-                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                  {contact.id > 4 && (
+                    <button 
+                      onClick={() => handleDeleteContact(contact.id)}
+                      className="p-2.5 bg-rose-950/40 text-rose-400 hover:bg-rose-900/60 border border-rose-900/50 rounded-xl cursor-pointer transition-all"
+                      title="Hapus Kontak"
                     >
-                      <PhoneCall size={13} /> Panggil
-                    </a>
-                    {contact.id > 4 && (
-                      <button 
-                        onClick={() => handleDeleteContact(contact.id)}
-                        className="p-2.5 bg-rose-950/40 text-rose-400 hover:bg-rose-900/60 border border-rose-900/50 rounded-xl cursor-pointer transition-all"
-                        title="Hapus Kontak"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -424,7 +414,7 @@ export default function P3KGuide() {
                   required 
                   value={newName} 
                   onChange={(e) => setNewName(e.target.value)} 
-                  placeholder="Contoh: Basecamp Gunung Talang" 
+                  placeholder="" 
                   className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-amber-500" 
                 />
               </div>
@@ -436,7 +426,7 @@ export default function P3KGuide() {
                   required 
                   value={newPhone} 
                   onChange={(e) => setNewPhone(e.target.value)} 
-                  placeholder="Contoh: 08123456789 atau 115" 
+                  placeholder="" 
                   className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-amber-500 font-mono" 
                 />
               </div>
@@ -447,7 +437,7 @@ export default function P3KGuide() {
                   type="text" 
                   value={newDesc} 
                   onChange={(e) => setNewDesc(e.target.value)} 
-                  placeholder="Contoh: Penjaga Jalur / Siaga 24 Jam" 
+                  placeholder="" 
                   className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-amber-500" 
                 />
               </div>

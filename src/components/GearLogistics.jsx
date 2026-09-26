@@ -190,7 +190,7 @@ export default function GearLogistics({
       <div className="flex items-center justify-between px-1">
         <div>
           <h3 className="text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-            <Layers className="text-emerald-400 drop-shadow-[0_0_8px_#34d399]" />
+            <Layers size={17} className="text-emerald-400 drop-shadow-[0_0_8px_#34d399]" />
             Gear & Logistics Ekspedisi
           </h3>
           <p className="text-[11px] text-slate-400 mt-0.5">Kelola logistik tim, perlengkapan pribadi, dan ecowaste.</p>
@@ -269,7 +269,7 @@ export default function GearLogistics({
           {editingGroupId === 'new' ? (
             <div className="p-4 bg-slate-900/90 border border-emerald-500/50 rounded-2xl space-y-3">
               <div className="flex gap-2">
-                <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang Baru..." className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" autoFocus />
+                <input type="text" value={editGroupForm.name} onChange={(e) => setEditGroupForm({...editGroupForm, name: e.target.value})} placeholder="Nama Barang Baru" className="flex-1 bg-slate-950 border border-slate-700 text-white text-xs rounded-xl px-3.5 py-2.5 outline-none focus:border-emerald-500" autoFocus />
                 <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2">
                   <span className="text-[10px] font-bold text-slate-400">QTY:</span>
                   <input type="number" min="1" value={editGroupForm.qty} onChange={(e) => setEditGroupForm({...editGroupForm, qty: parseInt(e.target.value) || 1})} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
@@ -351,7 +351,7 @@ export default function GearLogistics({
           ))}
 
           <form onSubmit={tambahPersonalItem} className="flex gap-2">
-            <input type="text" value={newPersonalItem} onChange={(e) => setNewPersonalItem(e.target.value)} placeholder="Tambah barang manual ke list lo..." className="flex-1 bg-slate-900/90 border border-slate-800 text-white text-xs rounded-2xl px-4 py-3 outline-none focus:border-cyan-500" />
+            <input type="text" value={newPersonalItem} onChange={(e) => setNewPersonalItem(e.target.value)} placeholder="Tambah barang ke list lo..." className="flex-1 bg-slate-900/90 border border-slate-800 text-white text-xs rounded-2xl px-4 py-3 outline-none focus:border-cyan-500" />
             <div className="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl px-3 py-2 hidden sm:flex">
                <span className="text-[10px] font-bold text-slate-400">QTY:</span>
                <input type="number" min="1" value={newPersonalQty} onChange={(e) => setNewPersonalQty(parseInt(e.target.value) || 1)} className="w-8 bg-transparent text-white text-xs text-center outline-none font-bold font-mono" />
@@ -471,7 +471,7 @@ export default function GearLogistics({
 
           {isAddingWaste ? (
             <form onSubmit={tambahWasteItem} className="flex gap-2 pt-2">
-              <input type="text" value={newWasteItem} onChange={(e) => setNewWasteItem(e.target.value)} placeholder="Contoh: Kaleng Gas, Bungkus Plastik..." className="flex-1 bg-slate-900 border border-slate-700 text-white text-xs rounded-2xl px-4 py-3 outline-none focus:border-amber-500" autoFocus />
+              <input type="text" value={newWasteItem} onChange={(e) => setNewWasteItem(e.target.value)} placeholder="Contoh: Kenzler, Kopi, dll" className="flex-1 bg-slate-900 border border-slate-700 text-white text-xs rounded-2xl px-4 py-3 outline-none focus:border-amber-500" autoFocus />
               <button type="submit" className="px-5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-2xl cursor-pointer">Simpan</button>
               <button type="button" onClick={() => setIsAddingWaste(false)} className="px-3 text-slate-400 hover:text-white cursor-pointer"><X size={16}/></button>
             </form>

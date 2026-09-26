@@ -9,11 +9,11 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// Daftarkan Service Worker untuk Mode Offline / PWA
-if ('serviceWorker' in navigator) {
+// Daftarkan Service Worker HANYA saat di Production (Vercel), matikan saat di Localhost
+if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost')) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then((reg) => console.log('Service Worker terdaftar dengan sukses:', reg.scope))
-      .catch((err) => console.log('Pendaftaran Service Worker gagal:', err));
+      .then((reg) => console.log('Service Worker terdaftar:', reg.scope))
+      .catch((err) => console.log('Gagal daftar SW:', err));
   });
 }

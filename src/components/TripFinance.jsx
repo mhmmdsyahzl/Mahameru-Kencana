@@ -252,7 +252,7 @@ export default function TripFinance({ trip, currentUser }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-slate-400 px-1">Keperluan</label>
-                <input type="text" placeholder="Beli apa? (Cth: Konsumsi)" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50" />
+                <input type="text" placeholder="Beli apa? (Contoh: Konsumsi)" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/50" />
               </div>
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-slate-400 px-1">Nominal (Rp)</label>
@@ -402,7 +402,7 @@ export default function TripFinance({ trip, currentUser }) {
                     </div>
 
                     <div className="flex gap-2 pt-1">
-                      <input type="number" placeholder="Nominal cicilan (Cth: 20000)" value={cicilanInputs[m.uid] || ''} onChange={(e) => setCicilanInputs({ ...cicilanInputs, [m.uid]: e.target.value })} className="flex-1 bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500/50"/>
+                      <input type="number" placeholder="Nominal cicilan (Contoh: 20000)" value={cicilanInputs[m.uid] || ''} onChange={(e) => setCicilanInputs({ ...cicilanInputs, [m.uid]: e.target.value })} className="flex-1 bg-slate-950/90 border border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500/50"/>
                       <button onClick={() => handleAddCicilan(m.uid)} className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold cursor-pointer shadow-md flex items-center gap-1">
                         <Plus size={13} /> Setor
                       </button>
@@ -422,7 +422,7 @@ export default function TripFinance({ trip, currentUser }) {
             <div className="bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-800/90 shadow-xl flex justify-between items-center">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Konsumsi BBM</span>
-                <p className="text-xs text-slate-300 mt-0.5 font-medium">{fuelLogs.length} catatan pengisian bensin</p>
+                <p className="text-xs text-slate-300 mt-0.5 font-medium">{fuelLogs.length} Catatan Pengisian Bensin</p>
               </div>
               <div className="text-right">
                 <span className="text-sm font-bold text-amber-400 font-mono">{totalFuelLiters.toFixed(1)} Liter</span>
@@ -437,8 +437,8 @@ export default function TripFinance({ trip, currentUser }) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <input type="text" placeholder="Kendaraan (Cth: Mobil / Nmax)" value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-amber-500/50" />
-                <input type="number" step="0.1" placeholder="Jumlah Liter (Cth: 10)" value={liters} onChange={(e) => setLiters(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500/50" />
+                <input type="text" placeholder="Kendaraan (Contoh: Mobil / Nmax)" value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-amber-500/50" />
+                <input type="number" step="0.1" placeholder="Jumlah Liter (Contoh: 10)" value={liters} onChange={(e) => setLiters(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500/50" />
                 <input type="number" placeholder="Total Biaya (Rp)" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500/50" />
               </div>
 
@@ -460,7 +460,7 @@ export default function TripFinance({ trip, currentUser }) {
               {/* MULTI-PENUMPANG CHECKBOX SELECTION */}
               <div className="space-y-1.5 pt-1">
                 <label className="text-[11px] font-medium text-slate-400 px-1 flex items-center justify-between">
-                  <span>Pilih Penumpang / Anggota Ikut (Bisa lebih dari 1):</span>
+                  <span>Pilih Penumpang / Anggota:</span>
                   <span className="text-[10px] text-amber-400 font-bold">{selectedPassengers.length} Dipilih</span>
                 </label>
                 <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -512,7 +512,7 @@ export default function TripFinance({ trip, currentUser }) {
             <div className="bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-800/90 shadow-xl flex justify-between items-center">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Catatan Pengeluaran Tol</span>
-                <p className="text-xs text-slate-300 mt-0.5 font-medium">{tolLogs.length} transaksi tol tercatat</p>
+                <p className="text-xs text-slate-300 mt-0.5 font-medium">{tolLogs.length} Transaksi Tol Tercatat</p>
               </div>
               <div className="text-right">
                 <span className="text-sm font-bold text-blue-400 font-mono">{formatRp(totalTolCost)}</span>
@@ -522,11 +522,11 @@ export default function TripFinance({ trip, currentUser }) {
             <form onSubmit={handleAddTol} className="bg-slate-900/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-800/90 shadow-xl space-y-3">
               <div className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5 px-0.5">
                 <Sparkles size={13} className="text-blue-400" />
-                <span>Catat Pembayaran Tol Manual</span>
+                <span>Catat Pembayaran Tol</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <input type="text" placeholder="Keterangan (Cth: Gerbang Tol)" value={tolNote} onChange={(e) => setTolNote(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-blue-500/50" />
+                <input type="text" placeholder="Keterangan (Contoh: Gerbang Tol)" value={tolNote} onChange={(e) => setTolNote(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white focus:outline-none focus:border-blue-500/50" />
                 <input type="number" placeholder="Nominal Bayar (Rp)" value={tolCost} onChange={(e) => setTolCost(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50" />
                 <select value={tolUserUid} onChange={(e) => setTolUserUid(e.target.value)} className="bg-slate-950/90 border border-slate-800 rounded-2xl py-3 px-3 text-xs text-white focus:outline-none cursor-pointer">
                   {members.map(m => <option key={m.uid} value={m.uid}>Dibayar oleh: {m.displayName}</option>)}
@@ -566,7 +566,7 @@ export default function TripFinance({ trip, currentUser }) {
           <div className="bg-slate-900/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-800/90 shadow-xl space-y-3">
             <div className="flex items-center gap-2">
               <Calculator size={16} className="text-emerald-400" />
-              <h5 className="text-xs font-bold text-white uppercase tracking-wider">Kalkulasi Kas Trip vs Total Pengeluaran</h5>
+              <h5 className="text-xs font-bold text-white uppercase tracking-wider">Kalkulasi Kas Trip & Total Pengeluaran</h5>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
               <div className="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800/80">

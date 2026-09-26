@@ -11,13 +11,36 @@ export default function TripTimelineMap({ trip, currentUser }) {
   const [status, setStatus] = useState('Belum');
   const [loading, setLoading] = useState(false);
 
-  // State untuk Fitur Edit Inline
+  // State untuk Fitur Edit Inline & Filter Tab Hari aktif
   const [editingAgendaId, setEditingAgendaId] = useState(null);
+  const [activeDayTab, setActiveDayTab] = useState('ALL');
 
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutes = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
 
   const itineraries = trip?.itineraries || [];
+
+  // Ambil daftar tanggal unik yang ada dari itinerary atau rentang tanggal trip
+  const getAvailableDates = () => {
+    const datesSet = new Set();
+    if (trip?.startDate && trip?.endDate) {
+      let curr = new Date(trip.startDate);
+      const end = new Date(trip.endDate);
+      while (curr <= end) {
+        datesSet.add(curr.toISOString().split('T')[0]);
+        curr.setDate(curr.getDate() + 1);
+      }
+    }
+    itineraries.forEach(item => {
+      if (item.date) datesSet.add(item.date);
+    });
+    if (datesSet.size === 0 && trip?.startDate) {
+      datesSet.add(trip.startDate);
+    }
+    return Array.from(datesSet).sort();
+  };
+
+  const availableDates = getAvailableDates();
 
   const handleSelectHour = (h) => {
     const parts = time.split(':');
@@ -169,6 +192,11 @@ export default function TripTimelineMap({ trip, currentUser }) {
     }
   };
 
+  // Filter itineraries berdasarkan tab hari/tanggal yang aktif
+  const filteredItineraries = itineraries
+    .filter(item => activeDayTab === 'ALL' || item.date === activeDayTab)
+    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
   return (
     <div className="space-y-4 text-left pb-4">
       
@@ -179,10 +207,10 @@ export default function TripTimelineMap({ trip, currentUser }) {
             <Compass size={17} className="text-cyan-400 drop-shadow-[0_0_8px_#22d3ee]" />
             Timeline & Rundown Ekspedisi
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">Atur jadwal, rute, dan status progress kegiatan.</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Atur jadwal, rute, dan status progress kegiatan per hari.</p>
         </div>
         <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-          {itineraries.length} Agenda
+          {itineraries.length} Total Agenda
         </span>
       </div>
 
@@ -333,96 +361,141 @@ export default function TripTimelineMap({ trip, currentUser }) {
                 className={`w-full flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-white text-xs font-semibold shadow-lg transition-all cursor-pointer disabled:opacity-50 ${editingAgendaId ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-950/50' : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-950/50'}`}
               >
                 {editingAgendaId ? <Check size={16} /> : <Plus size={16} />}
-                <span>{loading ? 'Menifying...' : (editingAgendaId ? 'Perbarui Agenda' : 'Simpan ke Rundown')}</span>
+                <span>{loading ? 'Menyimpan...' : (editingAgendaId ? 'Perbarui Agenda' : 'Simpan ke Rundown')}</span>
               </button>
             </div>
           </div>
         </div>
       </form>
 
-      {/* --- LIST TIMELINE MEMANJANG (PERFECTLY ALIGNED GRID) --- */}
-      <div className="space-y-3 pt-2">
-        <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1">Daftar Agenda Tersusun</h4>
+      {/* --- TAB FILTER PILIH HARI / TANGGAL --- */}
+      <div className="space-y-2 pt-2">
+        <div className="flex items-center justify-between px-1">
+          <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pilih Hari / Tanggal Agenda</h4>
+          <span className="text-[10px] text-slate-500">Klik hari untuk melihat jadwal spesifik</span>
+        </div>
 
-        {itineraries.length === 0 ? (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            onClick={() => setActiveDayTab('ALL')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 border flex items-center gap-2 ${
+              activeDayTab === 'ALL'
+                ? 'bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/30'
+                : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <span>Semua Hari</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeDayTab === 'ALL' ? 'bg-cyan-700 text-white' : 'bg-slate-800 text-slate-300'}`}>
+              {itineraries.length}
+            </span>
+          </button>
+
+          {availableDates.map((dateStr, index) => {
+            const count = itineraries.filter(i => i.date === dateStr).length;
+            const dayName = new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long' });
+
+            return (
+              <button
+                key={dateStr}
+                onClick={() => setActiveDayTab(dateStr)}
+                className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 border flex items-center gap-2 ${
+                  activeDayTab === dateStr
+                    ? 'bg-cyan-600 text-white border-cyan-500 shadow-lg shadow-cyan-600/30'
+                    : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <span>Day {index + 1}</span>
+                <span className="text-[10px] opacity-75 font-mono font-normal">({dayName}, {dateStr})</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeDayTab === dateStr ? 'bg-cyan-700 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* --- LIST TIMELINE MEMANJANG (TERFILTER PER HARI) --- */}
+      <div className="space-y-3 pt-1">
+        {filteredItineraries.length === 0 ? (
           <div className="text-center py-10 bg-slate-900/30 rounded-3xl border border-dashed border-slate-800 text-slate-500 text-xs px-4">
-            Belum ada agenda tersusun. Yuk atur jadwal perjalananmu di atas!
+            Belum ada agenda untuk tanggal/hari ini. Yuk buat jadwalnya di atas!
           </div>
         ) : (
           <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-cyan-500 before:via-amber-500 before:to-slate-800">
-            {itineraries
-              .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
-              .map((item, index) => (
-                <div 
-                  key={index}
-                  className={`group relative flex flex-col xl:flex-row xl:items-center justify-between p-4 rounded-2xl bg-slate-900/90 backdrop-blur-xl border transition-all shadow-xl gap-4 ml-2 ${editingAgendaId === item.id ? 'border-cyan-500 ring-1 ring-cyan-500' : 'border-slate-800/90 hover:border-cyan-500/40'}`}
-                >
-                  {/* Titik Node Timeline di Kiri Card */}
-                  <div className="absolute -left-7 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-cyan-400 border-2 border-slate-950 shadow-[0_0_8px_#22d3ee]" />
+            {filteredItineraries.map((item, index) => (
+              <div 
+                key={index}
+                className={`group relative flex flex-col xl:flex-row xl:items-center justify-between p-4 rounded-2xl bg-slate-900/90 backdrop-blur-xl border transition-all shadow-xl gap-4 ml-2 ${editingAgendaId === item.id ? 'border-cyan-500 ring-1 ring-cyan-500' : 'border-slate-800/90 hover:border-cyan-500/40'}`}
+              >
+                {/* Titik Node Timeline di Kiri Card */}
+                <div className="absolute -left-7 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-cyan-400 border-2 border-slate-950 shadow-[0_0_8px_#22d3ee]" />
 
-                  {/* 1. SISI KIRI: Nama Kegiatan & Lokasi */}
-                  <div className="space-y-2 min-w-0 flex-1">
-                    <div className="text-sm font-bold text-white tracking-wide">
-                      {item.activity}
-                    </div>
-                    
-                    {item.location && (
-                      <button 
-                        type="button"
-                        onClick={() => openGoogleMaps(item.location)}
-                        className="inline-flex items-center gap-1.5 text-xs text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 px-2.5 py-1 rounded-xl border border-cyan-500/20 transition-all cursor-pointer truncate max-w-full font-medium"
-                        title="Buka di Google Maps"
-                      >
-                        <MapPin size={12} className="shrink-0 text-cyan-400" />
-                        <span className="truncate">{item.location}</span>
-                      </button>
-                    )}
+                {/* 1. SISI KIRI: Nama Kegiatan & Lokasi */}
+                <div className="space-y-2 min-w-0 flex-1">
+                  <div className="text-sm font-bold text-white tracking-wide">
+                    {item.activity}
                   </div>
-
-                  {/* 2. SISI KANAN (TERKUNCI SEJAJAR: TANGGAL/JAM, STATUS, EDIT/HAPUS) */}
-                  <div className="flex flex-wrap items-center gap-3 shrink-0 pt-2 xl:pt-0 border-t xl:border-t-0 border-slate-800/80 justify-between xl:justify-end">
-                    
-                    {/* Kotak Tanggal & Jam */}
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800/90 shrink-0">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 font-mono">
-                        <Calendar size={13} className="text-cyan-400" />
-                        <span>{item.date}</span>
-                      </div>
-                      <span className="text-slate-600">|</span>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 font-mono">
-                        <Clock size={13} />
-                        <span>{item.time}</span>
-                      </div>
-                    </div>
-
-                    {/* Tombol Status Interaktif */}
-                    <div onClick={() => handleToggleStatus(item)} className="shrink-0">
-                      {renderStatusButton(item.status)}
-                    </div>
-
-                    {/* Tombol Edit & Hapus */}
-                    <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
-                      <button 
-                        type="button"
-                        onClick={() => handleStartEdit(item)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all cursor-pointer"
-                        title="Edit Cepat di Form Atas"
-                      >
-                        <Edit3 size={15} />
-                      </button>
-
-                      <button 
-                        type="button"
-                        onClick={() => handleDeleteAgenda(item)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
-                        title="Hapus Agenda"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-
-                  </div>
+                  
+                  {item.location && (
+                    <button 
+                      type="button"
+                      onClick={() => openGoogleMaps(item.location)}
+                      className="inline-flex items-center gap-1.5 text-xs text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 px-2.5 py-1 rounded-xl border border-cyan-500/20 transition-all cursor-pointer truncate max-w-full font-medium"
+                      title="Buka di Google Maps"
+                    >
+                      <MapPin size={12} className="shrink-0 text-cyan-400" />
+                      <span className="truncate">{item.location}</span>
+                    </button>
+                  )}
                 </div>
+
+                {/* 2. SISI KANAN: HARI, TANGGAL/JAM, STATUS, EDIT/HAPUS */}
+                <div className="flex flex-wrap items-center gap-3 shrink-0 pt-2 xl:pt-0 border-t xl:border-t-0 border-slate-800/80 justify-between xl:justify-end">
+                  
+                  {/* Kotak Tanggal, Hari & Jam */}
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800/90 shrink-0">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 font-mono">
+                      <Calendar size={13} className="text-cyan-400" />
+                      <span>
+                        {item.date ? `${new Date(item.date).toLocaleDateString('id-ID', { weekday: 'long' })}, ${item.date}` : item.date}
+                      </span>
+                    </div>
+                    <span className="text-slate-600">|</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 font-mono">
+                      <Clock size={13} />
+                      <span>{item.time}</span>
+                    </div>
+                  </div>
+
+                  {/* Tombol Status Interaktif */}
+                  <div onClick={() => handleToggleStatus(item)} className="shrink-0">
+                    {renderStatusButton(item.status)}
+                  </div>
+
+                  {/* Tombol Edit & Hapus */}
+                  <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
+                    <button 
+                      type="button"
+                      onClick={() => handleStartEdit(item)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all cursor-pointer"
+                      title="Edit Cepat di Form Atas"
+                    >
+                      <Edit3 size={15} />
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => handleDeleteAgenda(item)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                      title="Hapus Agenda"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+
+                </div>
+              </div>
             ))}
           </div>
         )}

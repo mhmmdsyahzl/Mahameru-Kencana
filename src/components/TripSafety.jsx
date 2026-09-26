@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { 
   ShieldAlert, PhoneCall, HeartPulse, ExternalLink, 
-  Stethoscope, Plus, Trash2, Edit3, Save, Sparkles, Activity
+  Stethoscope, Plus, Trash2, Edit3, Save, Sparkles, Activity, BellRing, X, AlertTriangle
 } from 'lucide-react';
 import { db } from '../firebase/config';
 import { doc, updateDoc, collection, onSnapshot } from 'firebase/firestore';
@@ -24,6 +25,17 @@ export default function TripSafety({ trip, currentUser }) {
   const [newEcCategory, setNewEcCategory] = useState('SAR');
   const [newEcPhone, setNewEcPhone] = useState('');
   const [newEcLocation, setNewEcLocation] = useState('');
+
+  // State Modal Konfirmasi Hapus & Toast Mandiri
+  const [deleteIndexTarget, setDeleteIndexTarget] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '' });
+
+  const showToast = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -67,8 +79,8 @@ export default function TripSafety({ trip, currentUser }) {
 
     if (cond.includes('sakit hati') || cond.includes('galau') || cond.includes('beban hidup') || cond.includes('overthinking') || cond.includes('sedih')) {
       return {
-        action: 'Cari pelarian yang bener: Gas riding sunmori, daki gunung, atau ngopi santai bareng sohib biar gak overthinking.',
-        meds: 'Secangkir Kopi Hitam, Playlist Musik Indie, & Healing ke Alam Bebas ☕'
+        action: 'HEALING BRO!! Gas Touring, Daki Gunung, atau ngopi santai bareng temen biar gak overthinking.',
+        meds: 'Secangkir Kopi Hitam, Playlist Musik, & Healing ke Alam Bebas'
       };
     }
 
@@ -160,10 +172,10 @@ export default function TripSafety({ trip, currentUser }) {
       }
 
       setIsEditingMyMedical(false);
-      alert('Data profil darurat berhasil disinkronkan! 🚀');
+      showToast('Data profil darurat berhasil diperbarui! 🚀');
     } catch (error) {
       console.error('Gagal menyimpan data medis:', error);
-      alert('Gagal menyimpan ke database.');
+      showToast('Gagal menyimpan ke database.');
     }
   };
 
@@ -171,33 +183,37 @@ export default function TripSafety({ trip, currentUser }) {
     e.preventDefault();
     if (!trip?.id) return;
     try {
-      const newContact = { name: newEcName, category: newEcCategory, phone: newEcPhone, location: newEcLocation };
+      const newContact = { name: newEcName, category: newEcCategory.trim() || 'Darurat', phone: newEcPhone, location: newEcLocation };
       const updatedContacts = [...emergencyContacts, newContact];
       const tripRef = doc(db, 'trips', trip.id);
       await updateDoc(tripRef, { emergencyContacts: updatedContacts });
       setNewEcName('');
       setNewEcPhone('');
       setNewEcLocation('');
+      setNewEcCategory('SAR');
       setIsAddingEmergency(false);
+      showToast('Kontak darurat berhasil ditambahkan!');
     } catch (error) {
       console.error('Gagal menambah kontak:', error);
     }
   };
 
-  const handleDeleteEmergencyContact = async (indexToDelete) => {
-    if (!trip?.id) return;
-    if (!window.confirm('Hapus kontak darurat ini?')) return;
+  const confirmDeleteEmergencyContact = async () => {
+    if (deleteIndexTarget === null || !trip?.id) return;
     try {
-      const updatedContacts = emergencyContacts.filter((_, idx) => idx !== indexToDelete);
+      const updatedContacts = emergencyContacts.filter((_, idx) => idx !== deleteIndexTarget);
       const tripRef = doc(db, 'trips', trip.id);
       await updateDoc(tripRef, { emergencyContacts: updatedContacts });
+      setDeleteIndexTarget(null);
+      showToast('Kontak darurat berhasil dihapus.');
     } catch (error) {
       console.error('Gagal menghapus:', error);
+      showToast('Gagal menghapus kontak.');
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-8 text-left">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-8 text-left relative">
       
       {/* Header Elegan Bergaya Glassmorphism Modern */}
       <div className="relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-900/95 to-slate-950/90 backdrop-blur-2xl border border-slate-800/80 rounded-3xl p-5 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -240,7 +256,7 @@ export default function TripSafety({ trip, currentUser }) {
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div className="flex items-center gap-2 text-emerald-400 font-bold">
               <Sparkles size={16} />
-              <h3 className="uppercase tracking-wider">Form Sinkronisasi Data Medis & Darurat</h3>
+              <h3 className="uppercase tracking-wider">Form Data Medis & Darurat</h3>
             </div>
             <button onClick={() => setIsEditingMyMedical(false)} className="text-slate-400 hover:text-white">✕</button>
           </div>
@@ -249,19 +265,19 @@ export default function TripSafety({ trip, currentUser }) {
             <div>
               <label className="text-slate-400 block mb-1.5 font-semibold">Golongan Darah:</label>
               <select value={myBloodType} onChange={(e)=>setMyBloodType(e.target.value)} className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500">
-                {['A', 'B', 'AB', 'O', 'A+', 'B+', 'O+', 'AB+', 'Tidak Tahu'].map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
+                {['A', 'B', 'AB', 'O', 'A+', 'B+', 'O+', 'AB+', '-'].map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
               </select>
             </div>
             <div>
               <label className="text-slate-400 block mb-1.5 font-semibold">Nomor BPJS:</label>
               <input 
                 type="text" value={myBpjs} onChange={(e) => setMyBpjs(e.target.value)}
-                placeholder="Contoh: 0000297676991"
+                placeholder="******"
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none font-mono focus:border-emerald-500"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-slate-400 block mb-1.5 font-semibold">Riwayat Penyakit (Cth: Maag, Sakit Hati, Asma):</label>
+              <label className="text-slate-400 block mb-1.5 font-semibold">Riwayat Penyakit (Contoh: Maag, Demam, Asma):</label>
               <input 
                 type="text" value={myMedicalHistory} onChange={(e) => setMyMedicalHistory(e.target.value)}
                 placeholder="Tidak ada / Tulis kondisi Anda"
@@ -272,7 +288,7 @@ export default function TripSafety({ trip, currentUser }) {
               <label className="text-slate-400 block mb-1.5 font-semibold">Nama Kontak Darurat:</label>
               <input 
                 type="text" value={myEmergencyName} onChange={(e) => setMyEmergencyName(e.target.value)}
-                placeholder="Cth: Mbak Vhiee"
+                placeholder="Nama"
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500"
               />
             </div>
@@ -286,7 +302,7 @@ export default function TripSafety({ trip, currentUser }) {
               <label className="text-slate-400 block mb-1.5 font-semibold">No. HP Kontak Darurat:</label>
               <input 
                 type="text" value={myEmergencyPhone} onChange={(e) => setMyEmergencyPhone(e.target.value)}
-                placeholder="Contoh: 085364797152"
+                placeholder="************"
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none font-mono focus:border-emerald-500"
               />
             </div>
@@ -294,7 +310,7 @@ export default function TripSafety({ trip, currentUser }) {
 
           <div className="flex gap-2.5 pt-2">
             <button onClick={handleSaveMyMedicalData} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-600/30">
-              <Save size={14} /> Simpan & Sinkronkan
+              <Save size={14} /> Simpan
             </button>
             <button onClick={() => setIsEditingMyMedical(false)} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl cursor-pointer">
               Batal
@@ -414,29 +430,45 @@ export default function TripSafety({ trip, currentUser }) {
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <PhoneCall size={16} className="text-emerald-400" />
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Kontak Darurat & Pos Siaga (Akses Cepat WA)</h3>
+            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Kontak Darurat & Pos Siaga</h3>
           </div>
           <button
             onClick={() => setIsAddingEmergency(!isAddingEmergency)}
             className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer shadow-sm"
           >
-            <Plus size={14} /> Tambah Instansi
+            <Plus size={14} /> Tambah Kontak
           </button>
         </div>
 
         {isAddingEmergency && (
           <form onSubmit={handleAddEmergencyContact} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3 text-xs shadow-2xl animate-in zoom-in-95 duration-200">
-            <h4 className="font-bold text-white text-sm">Tambah Instansi Darurat Baru</h4>
+            <h4 className="font-bold text-white text-sm">Tambah Kontak Darurat Baru</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input type="text" placeholder="Nama Instansi (Cth: Puskesmas)" value={newEcName} onChange={(e)=>setNewEcName(e.target.value)} required className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500" />
-              <select value={newEcCategory} onChange={(e)=>setNewEcCategory(e.target.value)} className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500">
-                <option value="SAR">SAR</option>
-                <option value="Pos Jaga">Pos Jaga</option>
-                <option value="Rumah Sakit">Rumah Sakit</option>
-                <option value="Kepolisian">Kepolisian</option>
-              </select>
-              <input type="text" placeholder="No WA (Cth: +62812...)" value={newEcPhone} onChange={(e)=>setNewEcPhone(e.target.value)} required className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none font-mono focus:border-emerald-500" />
-              <input type="text" placeholder="Lokasi (Cth: Basecamp)" value={newEcLocation} onChange={(e)=>setNewEcLocation(e.target.value)} required className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500" />
+              <input type="text" placeholder="Nama" value={newEcName} onChange={(e)=>setNewEcName(e.target.value)} required className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500" />
+              
+              {/* KATEGORI: BISA PILIH DARI SUGGESTION ATAU KETIK BEBAS */}
+              <div className="space-y-1">
+                <input 
+                  type="text" 
+                  list="category-suggestions"
+                  placeholder="Kategori (SAR / Pos Jaga / Ketik Bebas)" 
+                  value={newEcCategory} 
+                  onChange={(e)=>setNewEcCategory(e.target.value)} 
+                  required 
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500" 
+                />
+                <datalist id="category-suggestions">
+                  <option value="SAR" />
+                  <option value="Pos Jaga" />
+                  <option value="Rumah Sakit" />
+                  <option value="Kepolisian" />
+                  <option value="Warga Lokal" />
+                  <option value="Guide / Porter" />
+                </datalist>
+              </div>
+
+              <input type="text" placeholder="Nomor" value={newEcPhone} onChange={(e)=>setNewEcPhone(e.target.value)} required className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none font-mono focus:border-emerald-500" />
+              <input type="text" placeholder="Lokasi (Contoh: Basecamp)" value={newEcLocation} onChange={(e)=>setNewEcLocation(e.target.value)} required className="px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-white outline-none focus:border-emerald-500" />
             </div>
             <div className="flex gap-2.5 pt-2">
               <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold cursor-pointer shadow-md">Simpan</button>
@@ -451,7 +483,7 @@ export default function TripSafety({ trip, currentUser }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 uppercase tracking-wider">{ec.category}</span>
-                  <button onClick={() => handleDeleteEmergencyContact(idx)} className="text-slate-600 hover:text-rose-400 cursor-pointer p-1 transition-colors"><Trash2 size={13} /></button>
+                  <button onClick={() => setDeleteIndexTarget(idx)} className="text-slate-600 hover:text-rose-400 cursor-pointer p-1 transition-colors"><Trash2 size={13} /></button>
                 </div>
                 <h4 className="text-xs sm:text-sm font-bold text-white pt-1">{ec.name}</h4>
                 <p className="text-[11px] text-slate-400">{ec.location}</p>
@@ -469,6 +501,47 @@ export default function TripSafety({ trip, currentUser }) {
           ))}
         </div>
       </div>
+
+      {/* CUSTOM MODAL KONFIRMASI HAPUS (GANTIIN WINDOW.CONFIRM JADUL) */}
+      {deleteIndexTarget !== null && ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-white">Hapus Kontak Darurat?</h4>
+              <p className="text-xs text-slate-400">Tindakan ini tidak dapat dibatalkan setelah dihapus dari sistem.</p>
+            </div>
+            <div className="flex gap-2.5 pt-2">
+              <button 
+                onClick={confirmDeleteEmergencyContact} 
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl text-xs font-bold cursor-pointer shadow-lg shadow-rose-600/30 transition-all"
+              >
+                Ya, Hapus
+              </button>
+              <button 
+                onClick={() => setDeleteIndexTarget(null)} 
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl text-xs font-bold cursor-pointer transition-all"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* TOAST MENGGUNAKAN PORTAL (DIJAMIN MENGAMBANG DI ATAS SEGALA ELEMEN LAYAR) */}
+      {toast.show && ReactDOM.createPortal(
+        <div className="fixed bottom-6 right-6 z-[99999] bg-slate-900/95 border border-emerald-500/50 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-none">
+          <div className="w-6 h-6 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+            <BellRing size={13} />
+          </div>
+          <span className="text-xs font-semibold tracking-wide">{toast.message}</span>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

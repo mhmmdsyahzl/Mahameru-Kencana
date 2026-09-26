@@ -36,11 +36,11 @@ export default function App() {
       <header className="w-full max-w-6xl mx-auto px-6 py-6 flex justify-between items-center z-10">
         <div className="flex items-center gap-2.5 group cursor-pointer">
           <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm backdrop-blur-md">
-            <Compass size={20} />
+            <Compass size={20} className="animate-spin" />
           </div>
           <div>
-            <h1 className="font-bold text-base tracking-tight !m-0 text-white">Jejak Rimba</h1>
-            <p className="text-[11px] text-emerald-400/95 font-medium">Outdoor Trip & Safety Workspace</p>
+            <h1 className="font-bold text-base tracking-tight !m-0 text-white">Mahameru Kencana</h1>
+            <p className="text-[11px] text-emerald-400/95 font-medium">Antara mencintai alam atau ada luka yang terlalu dalam</p>
           </div>
         </div>
       </header>
@@ -56,11 +56,11 @@ export default function App() {
                 Plan Your Mountain Trip with Precision.
               </h2>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Workspace terpadu buat manajemen logistik pendakian, kalkulasi grade gunung, dan monitoring profil medis darurat tim lo secara real-time.
+                Workspace terpadu manajemen logistik pendakian, kalkulasi grade gunung, touring dan monitoring profil medis darurats.
               </p>
               <div className="flex items-center gap-6 pt-2 text-xs text-slate-400 font-medium">
                 <div className="flex items-center gap-2">🛡️ Safety First</div>
-                <div className="flex items-center gap-2">⚡ Firebase Sync</div>
+                <div className="flex items-center gap-2">🏍️ Touring</div>
                 <div className="flex items-center gap-2">🏔️ Grade I - V</div>
               </div>
             </div>
@@ -82,7 +82,7 @@ export default function App() {
       </main>
 
       <footer className="w-full text-center py-6 text-xs text-slate-500 z-10">
-        © 2026 Jejak Rimba Workspace. All rights reserved.
+        © 2026 Mahameru Kencana
       </footer>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/config';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, EmailAuthProvider, reauthenticateWithCredential, deleteUser } from 'firebase/auth';
 import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
-import { Heart, LogOut, AlertCircle, ArrowRight, ShieldCheck, Edit3, X, Trash2, CheckCircle2 } from 'lucide-react';
+import { Heart, LogOut, AlertCircle, ArrowRight, ShieldCheck, Edit3, X, Trash2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 const MONKEY_AVATAR = 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=150&auto=format&fit=crop&q=80';
 
@@ -40,7 +40,7 @@ export default function Auth({ currentUser, setCurrentUser }) {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [bloodType, setBloodType] = useState('O');
   const [medicalHistory, setMedicalHistory] = useState('');
@@ -52,6 +52,7 @@ export default function Auth({ currentUser, setCurrentUser }) {
 
   const [delUsername, setDelUsername] = useState('');
   const [delPassword, setDelPassword] = useState('');
+  const [showDelPassword, setShowDelPassword] = useState(false);
   
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -232,7 +233,7 @@ export default function Auth({ currentUser, setCurrentUser }) {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Gol. Darah</label>
                 <select 
@@ -251,9 +252,10 @@ export default function Auth({ currentUser, setCurrentUser }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* FORM KONTAK DARURAT DIPERBAIKI JADI LEBIH RAPI (2 KOLOM RESPONSIF) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kontak</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kontak Darurat</label>
                 <input 
                   type="text" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)}
                   className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
@@ -268,21 +270,23 @@ export default function Auth({ currentUser, setCurrentUser }) {
                   {['Orang Tua', 'Saudara Kandung', 'Pasangan', 'Teman', 'Lainnya'].map(r => <option key={r} value={r} className="bg-slate-900">{r}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. HP</label>
-                <input 
-                  type="text" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
-                />
-              </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. BPJS</label>
-              <input 
-                type="text" value={bpjsNumber} onChange={(e) => setBpjsNumber(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. HP Kontak Darurat</label>
+                <input 
+                  type="text" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. BPJS</label>
+                <input 
+                  type="text" value={bpjsNumber} onChange={(e) => setBpjsNumber(e.target.value)}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
             </div>
 
             <div>
@@ -329,9 +333,8 @@ export default function Auth({ currentUser, setCurrentUser }) {
             </span>
           </div>
 
-          {/* List Informasi Medis & Darurat (Clean Responsive Stacked Card) */}
+          {/* List Informasi Medis & Darurat */}
           <div className="space-y-3 text-xs">
-            
             <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-2xl border border-slate-800/70 shadow-sm gap-2">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
@@ -366,7 +369,6 @@ export default function Auth({ currentUser, setCurrentUser }) {
                 {currentUser.bpjsNumber || currentUser.bpjs || '-'}
               </span>
             </div>
-
           </div>
 
           {/* Tombol Aksi */}
@@ -421,11 +423,23 @@ export default function Auth({ currentUser, setCurrentUser }) {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Konfirmasi Password</label>
-                  <input 
-                    type="password" required value={delPassword} onChange={(e) => setDelPassword(e.target.value)}
-                    placeholder="Password Anda..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-rose-500"
-                  />
+                  <div className="relative flex items-center">
+                    <input 
+                      type={showDelPassword ? "text" : "password"} 
+                      required 
+                      value={delPassword} 
+                      onChange={(e) => setDelPassword(e.target.value)}
+                      placeholder="Password Anda..."
+                      className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-800 bg-slate-950 text-xs text-white outline-none focus:border-rose-500 font-mono"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowDelPassword(!showDelPassword)}
+                      className="absolute right-3 text-slate-400 hover:text-white cursor-pointer transition-colors"
+                    >
+                      {showDelPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 pt-2">
@@ -448,10 +462,10 @@ export default function Auth({ currentUser, setCurrentUser }) {
     <div className="w-full bg-gradient-to-br from-slate-900/90 via-slate-950 to-slate-900/90 backdrop-blur-2xl border border-slate-800/80 rounded-3xl p-5 sm:p-8 shadow-2xl text-left transition-all">
       <div className="mb-6">
         <h2 className="text-xl font-bold tracking-tight text-white !m-0">
-          {isLogin ? 'Welcome back' : 'Create workspace'}
+          {isLogin ? 'Login ke Mahameru Kencana ' : 'Create accounts'}
         </h2>
         <p className="text-xs text-slate-400 mt-1">
-          {isLogin ? 'Masuk pakai username & password lo.' : 'Setup username & profil medis trip lo.'}
+          {isLogin ? 'Masukkan username & password.' : 'Setup username & profil medis trip.'}
         </p>
       </div>
 
@@ -468,12 +482,12 @@ export default function Auth({ currentUser, setCurrentUser }) {
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Panggilan</label>
               <input 
                 type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Alfin (Opsional)"
+                placeholder="Nama Pengguna"
                 className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Gol. Darah</label>
                 <select 
@@ -487,18 +501,19 @@ export default function Auth({ currentUser, setCurrentUser }) {
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Riwayat Penyakit</label>
                 <input 
                   type="text" value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)}
-                  placeholder="Kosongkan jika aman"
+                  placeholder="Kosongkan Jika Aman"
                   className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* FORM REGISTRASI KONTAK DARURAT DIPERBAIKI (2 KOLOM RAPI) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kontak</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nama Kontak Darurat</label>
                 <input 
                   type="text" value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)}
-                  placeholder="Cth: Suhelmi"
+                  placeholder="Nama Keluarga/Teman"
                   className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
                 />
               </div>
@@ -511,23 +526,25 @@ export default function Auth({ currentUser, setCurrentUser }) {
                   {['Orang Tua', 'Saudara Kandung', 'Pasangan', 'Teman', 'Lainnya'].map(r => <option key={r} value={r} className="bg-slate-900">{r}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. HP</label>
-                <input 
-                  type="text" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)}
-                  placeholder="0812xxxx"
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
-                />
-              </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. BPJS</label>
-              <input 
-                type="text" value={bpjsNumber} onChange={(e) => setBpjsNumber(e.target.value)}
-                placeholder="Kosongkan jika tidak ada"
-                className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. HP Kontak Darurat</label>
+                <input 
+                  type="text" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)}
+                  placeholder="08xxxxxxxxxx"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">No. BPJS</label>
+                <input 
+                  type="text" value={bpjsNumber} onChange={(e) => setBpjsNumber(e.target.value)}
+                  placeholder="Kosongkan Jika Tidak Ada"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
             </div>
 
             <div>
@@ -541,18 +558,31 @@ export default function Auth({ currentUser, setCurrentUser }) {
           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Username</label>
           <input 
             type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
-            placeholder="alfin_rimba"
+            placeholder="Nama Pengguna"
             className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"
           />
         </div>
 
         <div>
           <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
-          <input 
-            type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-4 py-3 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
-          />
+          <div className="relative flex items-center">
+            <input 
+              type={showPassword ? "text" : "password"} 
+              required 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 pr-12 rounded-2xl border border-slate-800 bg-slate-950 text-white text-xs sm:text-sm outline-none focus:border-emerald-500 font-mono"
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 text-slate-400 hover:text-white cursor-pointer transition-colors"
+              title={showPassword ? "Sembunyikan password" : "Lihat password"}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
         <button type="submit" disabled={loading} className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-bold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer">

@@ -109,12 +109,6 @@ export default function TripWeatherWidget({ trip }) {
         <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 shrink-0">
           <CloudRain size={16}/> Cuaca Checkpoint
         </h4>
-        <span className={`text-[10px] px-2.5 py-1 rounded-xl border font-medium flex items-center gap-1 shrink-0 ${
-          isOfflineMode ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-        }`}>
-          {isOfflineMode ? <WifiOff size={11}/> : <Wifi size={11}/>}
-          {isOfflineMode ? 'Offline Cache' : 'Real-time Live'}
-        </span>
       </div>
 
       {/* Baris Tab Pilihan Destinasi (Terpisah di bawah header agar tidak nabrak) */}

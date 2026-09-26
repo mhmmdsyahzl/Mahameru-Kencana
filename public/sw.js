@@ -1,18 +1,7 @@
 // public/sw.js
-const CACHE_NAME = 'jejak-rimba-cache-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/src/main.jsx',
-  '/src/App.jsx'
-];
+const CACHE_NAME = 'jejak-rimba-cache-v2';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -28,19 +17,31 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.claim();
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Lewati request non-GET atau request ke Firebase Firestore agar ditangani SDK aslinya secara offline-first
-  if (event.request.method !== 'GET' || event.request.url.includes('firestore.googleapis.com')) {
-    return;
+  const url = new URL(event.request.url);
+
+  // PENTING: Jangan pernah intercept request dari localhost / Vite / Firebase API
+  if (
+    url.origin.includes('localhost') || 
+    url.hostname === '127.0.0.1' ||
+    url.pathname.includes('@vite') || 
+    url.pathname.includes('@react-refresh') ||
+    url.pathname.includes('src/') ||
+    event.request.url.includes('firestore.googleapis.com') ||
+    event.request.url.includes('identitytoolkit.googleapis.com')
+  ) {
+    return; // Biarkan browser/Vite yang handle sendiri secara normal
   }
+
+  // Hanya handle method GET
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request).catch(() => {
-        // Fallback offline page jika diperlukan
         if (event.request.mode === 'navigate') {
           return caches.match('/index.html');
         }
